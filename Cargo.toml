@@ -7,3 +7,4 @@ authors = ["Timo von Holtz <vonholtz@cp-med.com>"]
 euclid = "0.16.4"
 image = "0.18.0"
 clap = "2.29.2"
+num-traits = "0.1.42"

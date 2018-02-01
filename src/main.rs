@@ -1,11 +1,16 @@
+#![feature(test)]
+extern crate num_traits;
+extern crate euclid;
 extern crate image;
 extern crate clap;
+extern crate test;
 
 use image::*;
-
 use std::fs::File;
-
 use clap::{Arg, App};
+
+mod ray;
+mod color;
 
 fn main() {
     let matches =

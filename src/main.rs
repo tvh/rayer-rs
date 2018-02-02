@@ -3,6 +3,7 @@ extern crate num_traits;
 extern crate euclid;
 extern crate image;
 extern crate clap;
+extern crate palette;
 extern crate test;
 
 use image::*;

@@ -16,7 +16,7 @@ impl<T: Float> Sphere<T> {
 }
 
 impl<T: Float> Hitable<T> for Sphere<T> {
-    fn hit(self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
+    fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         let oc = r.origin - self.center;
         let a = r.direction.dot(r.direction);
         let b = oc.dot(r.direction);

@@ -16,12 +16,21 @@ mod ray;
 mod color;
 mod hitable;
 
+use hitable::hitable_list::*;
+use hitable::class::*;
+use hitable::sphere::*;
 use ray::Ray;
 
-fn color(r: ray::Ray<f32>) -> Rgb<f32> {
-    let unit_direction = r.direction.normalize();
-    let t = (unit_direction.y + 1.0)*0.5;
-    Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t
+fn color(r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<f32> {
+    let rec = world.hit(r, 0.0, std::f32::MAX);
+    match rec {
+        Some(rec) => Rgb::new(rec.normal.x+1.0, rec.normal.y+1.0, rec.normal.z+1.0)*0.5,
+        None => {
+            let unit_direction = r.direction.normalize();
+            let t = (unit_direction.y + 1.0)*0.5;
+            Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t
+        }
+    }
 }
 
 fn main() {
@@ -43,12 +52,20 @@ fn main() {
     let horizontal = Vector3D::new(4.0, 0.0, 0.0);
     let vertical = Vector3D::new(0.0, 2.0, 0.0);
     let origin = Point3D::new(0.0, 0.0, 0.0);
+
+    let spheres: Vec<Sphere<f32>> = vec![
+        Sphere::new(Point3D::new(0.0, 0.0, 1.0), 0.5),
+        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0)
+    ];
+    let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
+    let world = HitableList(list.as_ref());
+
     for i in 0..width {
         for j in 0..height {
             let u = (i as f32) / (width as f32);
             let v = (j as f32) / (height as f32);
             let r = Ray::new(origin, origin - (lower_left_corner + horizontal*u + vertical*v));
-            let col = color(r);
+            let col = color(r, &world);
             let pixel =
                 [(col.red*255.99) as u8
                 ,(col.green*255.99) as u8

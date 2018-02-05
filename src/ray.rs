@@ -1,6 +1,7 @@
 use euclid::*;
 use num_traits::float::*;
 
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Ray<T> {
     pub origin: Point3D<T>,
     pub direction: Vector3D<T>

@@ -9,5 +9,5 @@ pub struct HitRecord<T> {
 }
 
 pub trait Hitable<T> {
-    fn hit(self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>>;
+    fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>>;
 }

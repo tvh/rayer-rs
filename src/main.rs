@@ -14,6 +14,7 @@ use num_traits::float::*;
 
 mod ray;
 mod color;
+mod hitable;
 
 use ray::Ray;
 

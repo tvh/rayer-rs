@@ -1,5 +1,4 @@
 use euclid::*;
-use std::ops::*;
 use num_traits::float::*;
 
 pub struct Ray<T> {

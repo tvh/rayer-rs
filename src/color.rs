@@ -2,6 +2,10 @@ use std::ops::*;
 use std::iter::*;
 use palette::*;
 
+pub trait HasReflectance {
+    fn reflect(self, wl: f32) -> f32;
+}
+
 /// A representation over the visible spectrum.
 /// This has a resolution of 10nm, with index 0 representing
 /// 390nm and 31 representing 700nm.
@@ -18,6 +22,16 @@ impl Add for ColorSpectrum {
             *b = *a+*b;
         }
         ColorSpectrum { spectrum: res }
+    }
+}
+
+impl HasReflectance for ColorSpectrum {
+    fn reflect(self, wl: f32) -> f32 {
+        let index = ((wl as isize)/10)-39;
+        if index < 0 || index >= 32 {
+            return 0.0;
+        }
+        self.spectrum[index as usize]
     }
 }
 
@@ -40,15 +54,17 @@ pub fn xyz_from_wavelength(wl: f32) -> Xyz<f32> {
     Xyz::new(x, y, z)
 }
 
-/// Just does a naive translation from the color to a matching function.
-/// TODO: Use "An RGB-to-spectrum conversion for reflectances" instead
-pub fn match_color<C: IntoColor<f32>>(color: C, wl: f32) -> f32 {
-    let color_xyz = color.into_xyz();
-    let wl_color = xyz_from_wavelength(wl);
-    let wl_sum = wl_color.x + wl_color.y + wl_color.z;
-    let wl_color_normalized = wl_color/wl_sum;
-    let tmp = wl_color_normalized*color_xyz;
-    tmp.x+tmp.y+tmp.z
+impl<C: IntoColor<f32>> HasReflectance for C {
+    /// Just does a naive translation from the color to a matching function.
+    /// TODO: Use "An RGB-to-spectrum conversion for reflectances" instead
+    fn reflect(self, wl: f32) -> f32 {
+        let color_xyz = self.into_xyz();
+        let wl_color = xyz_from_wavelength(wl);
+        let wl_sum = wl_color.x + wl_color.y + wl_color.z;
+        let wl_color_normalized = wl_color/wl_sum;
+        let tmp = wl_color_normalized*color_xyz;
+        tmp.x+tmp.y+tmp.z
+    }
 }
 
 #[cfg(test)]
@@ -70,7 +86,7 @@ mod tests {
     fn test_match_color_rgb() {
         let white = Rgb::new(1.0, 1.0, 1.0);
         for i in 300..800 {
-            let val = match_color(white, i as f32);
+            let val = white.reflect(i as f32);
             assert!((val - 1.0).abs()<0.07
                     ,"White didn't match close to 1 for {:}nm, got instead: {:}"
                     , i, val

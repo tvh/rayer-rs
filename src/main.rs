@@ -91,7 +91,7 @@ fn main() {
             for _ in 0..num_samples {
                 let u = ((i as f32) + rng.next_f32()) / (width as f32);
                 let v = ((j as f32) + rng.next_f32()) / (height as f32);
-                let wl = rng.gen_range(390.0, 700.0);
+                let wl = rng.gen_range(380.0, 780.0);
                 let r = cam.get_ray(u, v, wl);
                 col = col + color(&mut rng, r, &world);
             }

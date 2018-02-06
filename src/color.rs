@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_xyz_from_valid() {
-        for i in 300..800 {
+        for i in 380..780 {
             let xyz = xyz_from_wavelength(i as f32);
             let xyz_clamped = xyz.clamp();
             assert_eq!(xyz, xyz_clamped, "Invalid xyz for wl={:}", i);
@@ -82,9 +82,18 @@ mod tests {
     }
 
     #[test]
+    fn test_reflect_wavelength() {
+        for i in 380..780 {
+            let xyz = xyz_from_wavelength(i as f32);
+            let refl = xyz.reflect(i as f32);
+            assert!(refl<=1.0, "Got non-correct reflection for {:}nm: {}", i, refl);
+        }
+    }
+
+    #[test]
     fn test_match_color_rgb() {
         let white = Rgb::new(1.0, 1.0, 1.0);
-        for i in 300..800 {
+        for i in 380..780 {
             let val = white.reflect(i as f32);
             assert!((val - 1.0).abs()<0.00001
                     ,"White didn't match close to 1 for {:}nm, got instead: {:}"

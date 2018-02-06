@@ -71,9 +71,9 @@ fn main() {
                 col = col + color(r, &world);
             }
             let pixel =
-                [(col.red/(num_samples as f32)*255.99) as u8
-                ,(col.green/(num_samples as f32)*255.99) as u8
-                ,(col.blue/(num_samples as f32)*255.9) as u8
+                [(col.red*255.99) as u8
+                ,(col.green*255.99) as u8
+                ,(col.blue*255.9) as u8
                 ];
             buffer[(i,height-j-1)] = image::Rgb(pixel);
         }

@@ -6,30 +6,51 @@ pub trait HasReflectance {
     fn reflect(self, wl: f32) -> f32;
 }
 
-/// A representation over the visible spectrum.
-/// This has a resolution of 10nm, with index 0 representing
-/// 390nm and 31 representing 700nm.
+/// A representation over the visible spectrum using 10 bins.
+/// .
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct ColorSpectrum {
-    spectrum: [f32; 32]
+pub struct ColorSpectrum10 {
+    spectrum: [f32; 10]
 }
 
-impl Add for ColorSpectrum {
-    type Output = ColorSpectrum;
-    fn add(self, other: ColorSpectrum) -> ColorSpectrum {
+impl Add for ColorSpectrum10 {
+    type Output = ColorSpectrum10;
+    fn add(self, other: ColorSpectrum10) -> ColorSpectrum10 {
         let mut res = self.spectrum.clone();
         for (a, b) in other.spectrum.iter().zip(res.iter_mut()) {
             *b = *a+*b;
         }
-        ColorSpectrum { spectrum: res }
+        ColorSpectrum10 { spectrum: res }
     }
 }
 
-impl HasReflectance for ColorSpectrum {
+impl AddAssign for ColorSpectrum10 {
+    fn add_assign(&mut self, other: ColorSpectrum10) {
+        for (a, b) in other.spectrum.iter().zip(self.spectrum.iter_mut()) {
+            *b = *a+*b;
+        }
+    }
+}
+
+impl Mul<ColorSpectrum10> for f32 {
+    type Output = ColorSpectrum10;
+    fn mul(self, other: ColorSpectrum10) -> ColorSpectrum10 {
+        let mut res = other.spectrum.clone();
+        for x in res.iter_mut() {
+            *x *= self;
+        }
+        ColorSpectrum10 { spectrum: res }
+    }
+}
+
+impl HasReflectance for ColorSpectrum10 {
     fn reflect(self, wl: f32) -> f32 {
-        let index = ((wl as isize)/10)-39;
-        if index < 0 || index >= 32 {
-            return 0.0;
+        let mut index = (wl as isize-380)/34;
+        if index < 0 {
+            index = 0;
+        }
+        if index >= 10 {
+            index = 9;
         }
         self.spectrum[index as usize]
     }
@@ -54,16 +75,158 @@ pub fn xyz_from_wavelength(wl: f32) -> Xyz<f32> {
     Xyz::new(x, y, z)
 }
 
+mod rgb_base_colors {
+    /// Values from "An RGB-to-spectrum conversion for reflectances"
+    use super::ColorSpectrum10;
+    use palette::*;
+
+    static WHITE_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            1.0000,
+            1.0000,
+            0.9999,
+            0.9993,
+            0.9992,
+            0.9998,
+            1.0000,
+            1.0000,
+            1.0000,
+            1.0000,
+        ]
+    };
+
+    static CYAN_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            0.9710,
+            0.9426,
+            1.0007,
+            1.0007,
+            1.0007,
+            1.0007,
+            0.1564,
+            0.0000,
+            0.0000,
+            0.0000,
+        ]
+    };
+
+    static MAGENTA_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            1.0000,
+            1.0000,
+            0.9685,
+            0.2229,
+            0.0000,
+            0.0458,
+            0.8369,
+            1.0000,
+            1.0000,
+            0.9959,
+        ]
+    };
+
+    static YELLOW_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            0.0001,
+            0.0000,
+            0.1088,
+            0.6651,
+            1.0000,
+            1.0000,
+            0.9996,
+            0.9586,
+            0.9685,
+            0.9840,
+        ]
+    };
+
+    static RED_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            0.1012,
+            0.0515,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.8325,
+            1.0149,
+            1.0149,
+            1.0149,
+        ]
+    };
+
+    static GREEN_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            0.0000,
+            0.0000,
+            0.0273,
+            0.7937,
+            1.0000,
+            0.9418,
+            0.1719,
+            0.0000,
+            0.0000,
+            0.0025,
+        ]
+    };
+
+    static BLUE_SPECTRUM: ColorSpectrum10 = ColorSpectrum10 {
+        spectrum: [
+            1.0000,
+            1.0000,
+            0.8916,
+            0.3323,
+            0.0000,
+            0.0000,
+            0.0003,
+            0.0369,
+            0.0483,
+            0.0496,
+        ]
+    };
+
+    pub fn rgb_to_spectrum(rgb: Rgb<f32>) -> ColorSpectrum10 {
+        let red = rgb.red;
+        let green = rgb.green;
+        let blue = rgb.blue;
+        let mut ret = ColorSpectrum10{ spectrum: [0.0; 10] };
+        if red <= green && red <= blue {
+            ret += red * WHITE_SPECTRUM;
+            if green <= blue {
+                ret += (green - red) * CYAN_SPECTRUM;
+                ret += (blue - green) * BLUE_SPECTRUM;
+            } else {
+                ret += (blue - red) * CYAN_SPECTRUM;
+                ret += (green - blue) * GREEN_SPECTRUM;
+            }
+        } else if green <= red && green <= blue {
+            ret += green * WHITE_SPECTRUM;
+            if red <= blue {
+                ret += (blue - green) * MAGENTA_SPECTRUM;
+                ret += (blue - red) * BLUE_SPECTRUM;
+            } else {
+                ret += (red - green) * MAGENTA_SPECTRUM;
+                ret += (red - blue) * RED_SPECTRUM;
+            }
+        } else /* blue <= red && blue <= green */ {
+            ret += blue * WHITE_SPECTRUM;
+            if red <= green {
+                ret += (green - blue) * YELLOW_SPECTRUM;
+                ret += (green - red) * GREEN_SPECTRUM;
+            } else {
+                ret += (green - blue) * YELLOW_SPECTRUM;
+                ret += (red - green) * RED_SPECTRUM;
+            }
+        }
+        ret
+    }
+}
+
 impl<C: IntoColor<f32>> HasReflectance for C {
-    /// Just does a naive translation from the color to a matching function.
-    /// TODO: Use "An RGB-to-spectrum conversion for reflectances" instead
     fn reflect(self, wl: f32) -> f32 {
         let color_rgb = self.into_rgb();
-        let wl_color = xyz_from_wavelength(wl).into_rgb();
-        let wl_sum = wl_color.red + wl_color.green + wl_color.blue;
-        let wl_color_normalized = wl_color/wl_sum;
-        let tmp = wl_color_normalized*color_rgb;
-        tmp.red+tmp.green+tmp.blue
+        let spectrum = rgb_base_colors::rgb_to_spectrum(color_rgb);
+        spectrum.reflect(wl)
     }
 }
 
@@ -95,11 +258,18 @@ mod tests {
         let white = Rgb::new(1.0, 1.0, 1.0);
         for i in 380..780 {
             let val = white.reflect(i as f32);
-            assert!((val - 1.0).abs()<0.00001
+            assert!((val - 1.0).abs()<0.001
                     ,"White didn't match close to 1 for {:}nm, got instead: {:}"
                     , i, val
             );
         }
+    }
+
+    #[bench]
+    fn bench_match_color_rgb(bench: &mut Bencher) {
+        let white = black_box(Rgb::new(1.0, 1.0, 1.0));
+        let wl = black_box(500.0);
+        bench.iter(|| white.reflect(wl));
     }
 
     #[bench]
@@ -116,8 +286,8 @@ mod tests {
 
     #[bench]
     fn bench_add(bench: &mut Bencher) {
-        let a = black_box(ColorSpectrum{ spectrum: [0.2; 32] });
-        let b = black_box(ColorSpectrum{ spectrum: [0.4; 32] });
+        let a = black_box(ColorSpectrum10{ spectrum: [0.2; 10] });
+        let b = black_box(ColorSpectrum10{ spectrum: [0.4; 10] });
         bench.iter(|| {
             a+b
         });

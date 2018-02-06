@@ -10,16 +10,15 @@ use euclid::*;
 use palette::*;
 use std::fs::File;
 use clap::{Arg, App};
-use num_traits::float::*;
 
-mod ray;
+mod camera;
 mod color;
 mod hitable;
+mod ray;
 
 use hitable::hitable_list::*;
 use hitable::class::*;
 use hitable::sphere::*;
-use ray::Ray;
 
 fn color(r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<f32> {
     let rec = world.hit(r, 0.0, std::f32::MAX);
@@ -48,23 +47,19 @@ fn main() {
     let width = 400;
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let lower_left_corner = Vector3D::new(-2.0, -1.0, -1.0);
-    let horizontal = Vector3D::new(4.0, 0.0, 0.0);
-    let vertical = Vector3D::new(0.0, 2.0, 0.0);
-    let origin = Point3D::new(0.0, 0.0, 0.0);
-
     let spheres: Vec<Sphere<f32>> = vec![
         Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5),
         Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0)
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());
+    let cam = camera::Camera::default();
 
     for i in 0..width {
         for j in 0..height {
             let u = (i as f32) / (width as f32);
             let v = (j as f32) / (height as f32);
-            let r = Ray::new(origin, lower_left_corner + horizontal*u + vertical*v);
+            let r = cam.get_ray(u, v);
             let col = color(r, &world);
             let pixel =
                 [(col.red*255.99) as u8

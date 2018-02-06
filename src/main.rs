@@ -48,13 +48,13 @@ fn main() {
     let width = 400;
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let lower_left_corner = Point3D::new(-2.0, -1.0, -1.0);
+    let lower_left_corner = Vector3D::new(-2.0, -1.0, -1.0);
     let horizontal = Vector3D::new(4.0, 0.0, 0.0);
     let vertical = Vector3D::new(0.0, 2.0, 0.0);
     let origin = Point3D::new(0.0, 0.0, 0.0);
 
     let spheres: Vec<Sphere<f32>> = vec![
-        Sphere::new(Point3D::new(0.0, 0.0, 1.0), 0.5),
+        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5),
         Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0)
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
@@ -64,14 +64,14 @@ fn main() {
         for j in 0..height {
             let u = (i as f32) / (width as f32);
             let v = (j as f32) / (height as f32);
-            let r = Ray::new(origin, origin - (lower_left_corner + horizontal*u + vertical*v));
+            let r = Ray::new(origin, lower_left_corner + horizontal*u + vertical*v);
             let col = color(r, &world);
             let pixel =
                 [(col.red*255.99) as u8
                 ,(col.green*255.99) as u8
                 ,(col.blue*255.9) as u8
                 ];
-            buffer[(i,j)] = image::Rgb(pixel);
+            buffer[(i,height-j-1)] = image::Rgb(pixel);
         }
     }
 

@@ -45,7 +45,7 @@ mod tests {
     fn test_hit() {
         // TODO: Do more than this smoke test
         let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0);
-        let ray = Ray::new(Point3D::new(-3.0, 0.0, 0.0), Vector3D::new(1.0, 0.0, 0.0));
+        let ray = Ray::new(Point3D::new(-3.0, 0.0, 0.0), Vector3D::new(1.0, 0.0, 0.0), 500.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
             None => panic!("Expected a hit"),

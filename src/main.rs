@@ -19,6 +19,7 @@ mod color;
 mod hitable;
 mod ray;
 
+use color::HasReflectance;
 use hitable::hitable_list::*;
 use hitable::Hitable;
 use hitable::sphere::*;
@@ -37,16 +38,22 @@ where R: rand::Rng
 }
 
 fn color<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<f32> {
+    let refl = reflectance(rng, r, world);
+    color::xyz_from_wavelength(r.wl).into_rgb() * refl
+}
+
+fn reflectance<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
     let rec = world.hit(r, 0.001, std::f32::MAX);
     match rec {
         Some(rec) => {
             let target = rec.p + rec.normal + rand_in_unit_sphere(rng);
-            color(rng, ray::Ray::new(rec.p, target-rec.p), world)*0.5
+            reflectance(rng, ray::Ray::new(rec.p, target-rec.p, r.wl), world)*0.5
         },
         None => {
             let unit_direction = r.direction.normalize();
             let t = (unit_direction.y + 1.0)*0.5;
-            Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t
+            let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
+            rgb.reflect(r.wl)
         }
     }
 }
@@ -84,7 +91,8 @@ fn main() {
             for _ in 0..num_samples {
                 let u = ((i as f32) + rng.next_f32()) / (width as f32);
                 let v = ((j as f32) + rng.next_f32()) / (height as f32);
-                let r = cam.get_ray(u, v);
+                let wl = rng.gen_range(390.0, 700.0);
+                let r = cam.get_ray(u, v, wl);
                 col = col + color(&mut rng, r, &world);
             }
             let pixel =

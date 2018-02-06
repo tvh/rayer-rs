@@ -21,7 +21,7 @@ impl Default for Camera<f32> {
 }
 
 impl<T: Float> Camera<T> {
-    pub fn get_ray(&self, u: T, v: T) -> Ray<T> {
-        Ray::new(self.origin, self.lower_left_corner + self.horizontal*u + self.vertical*v)
+    pub fn get_ray(&self, u: T, v: T, wl: f32) -> Ray<T> {
+        Ray::new(self.origin, self.lower_left_corner + self.horizontal*u + self.vertical*v, wl)
     }
 }

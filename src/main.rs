@@ -1,15 +1,17 @@
 #![feature(test)]
-extern crate num_traits;
+extern crate clap;
 extern crate euclid;
 extern crate image;
-extern crate clap;
+extern crate num_traits;
 extern crate palette;
+extern crate rand;
 extern crate test;
 
 use euclid::*;
 use palette::*;
 use std::fs::File;
 use clap::{Arg, App};
+use rand::Rng;
 
 mod camera;
 mod color;
@@ -43,8 +45,11 @@ fn main() {
              .takes_value(true))
         .get_matches();
     let output = matches.value_of("output").unwrap();
+
     let height = 200;
     let width = 400;
+    let num_samples = 100;
+
     let mut buffer = image::ImageBuffer::new(width, height);
 
     let spheres: Vec<Sphere<f32>> = vec![
@@ -55,16 +60,20 @@ fn main() {
     let world = HitableList(list.as_ref());
     let cam = camera::Camera::default();
 
+    let mut rng = rand::thread_rng();
     for i in 0..width {
         for j in 0..height {
-            let u = (i as f32) / (width as f32);
-            let v = (j as f32) / (height as f32);
-            let r = cam.get_ray(u, v);
-            let col = color(r, &world);
+            let mut col: Rgb<f32> = Rgb::new(0.0, 0.0, 0.0);
+            for _ in 0..num_samples {
+                let u = ((i as f32) + rng.next_f32()) / (width as f32);
+                let v = ((j as f32) + rng.next_f32()) / (height as f32);
+                let r = cam.get_ray(u, v);
+                col = col + color(r, &world);
+            }
             let pixel =
-                [(col.red*255.99) as u8
-                ,(col.green*255.99) as u8
-                ,(col.blue*255.9) as u8
+                [(col.red/(num_samples as f32)*255.99) as u8
+                ,(col.green/(num_samples as f32)*255.99) as u8
+                ,(col.blue/(num_samples as f32)*255.9) as u8
                 ];
             buffer[(i,height-j-1)] = image::Rgb(pixel);
         }

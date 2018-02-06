@@ -20,7 +20,7 @@ mod hitable;
 mod ray;
 
 use hitable::hitable_list::*;
-use hitable::class::*;
+use hitable::Hitable;
 use hitable::sphere::*;
 
 fn rand_in_unit_sphere<R, T>(rng: &mut R) -> Vector3D<T>

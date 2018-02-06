@@ -71,7 +71,6 @@ impl<C: IntoColor<f32>> HasReflectance for C {
 mod tests {
     use super::*;
     use test::*;
-    use palette::*;
 
     #[test]
     fn test_xyz_from_valid() {

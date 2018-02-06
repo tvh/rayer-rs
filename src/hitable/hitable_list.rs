@@ -1,5 +1,5 @@
 use ray::Ray;
-use hitable::class::*;
+use hitable::*;
 use num_traits::float::*;
 
 pub struct HitableList<'a, T: 'a>(pub &'a[&'a Hitable<T>]);

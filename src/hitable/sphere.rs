@@ -1,6 +1,6 @@
 use euclid::*;
 use ray::Ray;
-use hitable::class::*;
+use hitable::*;
 use num_traits::float::*;
 
 #[derive(PartialEq, Debug, Clone, Copy)]

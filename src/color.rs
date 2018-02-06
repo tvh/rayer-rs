@@ -58,12 +58,12 @@ impl<C: IntoColor<f32>> HasReflectance for C {
     /// Just does a naive translation from the color to a matching function.
     /// TODO: Use "An RGB-to-spectrum conversion for reflectances" instead
     fn reflect(self, wl: f32) -> f32 {
-        let color_xyz = self.into_xyz();
-        let wl_color = xyz_from_wavelength(wl);
-        let wl_sum = wl_color.x + wl_color.y + wl_color.z;
+        let color_rgb = self.into_rgb();
+        let wl_color = xyz_from_wavelength(wl).into_rgb();
+        let wl_sum = wl_color.red + wl_color.green + wl_color.blue;
         let wl_color_normalized = wl_color/wl_sum;
-        let tmp = wl_color_normalized*color_xyz;
-        tmp.x+tmp.y+tmp.z
+        let tmp = wl_color_normalized*color_rgb;
+        tmp.red+tmp.green+tmp.blue
     }
 }
 
@@ -86,7 +86,7 @@ mod tests {
         let white = Rgb::new(1.0, 1.0, 1.0);
         for i in 300..800 {
             let val = white.reflect(i as f32);
-            assert!((val - 1.0).abs()<0.07
+            assert!((val - 1.0).abs()<0.00001
                     ,"White didn't match close to 1 for {:}nm, got instead: {:}"
                     , i, val
             );

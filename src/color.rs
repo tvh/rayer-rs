@@ -273,6 +273,13 @@ mod tests {
     }
 
     #[bench]
+    fn bench_match_color_spectrum(bench: &mut Bencher) {
+        let white = black_box(ColorSpectrum10{spectrum: [1.0; 10]});
+        let wl = black_box(500.0);
+        bench.iter(|| white.reflect(wl));
+    }
+
+    #[bench]
     fn bench_xyz_from_wavelength(bench: &mut Bencher) {
         let a = black_box(500.0);
         bench.iter(|| xyz_from_wavelength(a));

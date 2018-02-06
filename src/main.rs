@@ -7,11 +7,12 @@ extern crate palette;
 extern crate rand;
 extern crate test;
 
-use euclid::*;
-use palette::*;
-use std::fs::File;
 use clap::{Arg, App};
+use euclid::*;
+use num_traits::Float;
+use palette::*;
 use rand::Rng;
+use std::fs::File;
 
 mod camera;
 mod color;
@@ -22,10 +23,26 @@ use hitable::hitable_list::*;
 use hitable::class::*;
 use hitable::sphere::*;
 
-fn color(r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<f32> {
-    let rec = world.hit(r, 0.0, std::f32::MAX);
+fn rand_in_unit_sphere<R, T>(rng: &mut R) -> Vector3D<T>
+where R: rand::Rng
+    , T: Float + rand::distributions::range::SampleRange
+{
+    let mut p: Vector3D<T>;
+    let mut gen_component = || rng.gen_range(-T::one(), T::one());
+    while {
+        p = Vector3D::new(gen_component(), gen_component(), gen_component());
+        p.dot(p) >= T::one()
+    } {}
+    p
+}
+
+fn color<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<f32> {
+    let rec = world.hit(r, 0.001, std::f32::MAX);
     match rec {
-        Some(rec) => Rgb::new(rec.normal.x+1.0, rec.normal.y+1.0, rec.normal.z+1.0)*0.5,
+        Some(rec) => {
+            let target = rec.p + rec.normal + rand_in_unit_sphere(rng);
+            color(rng, ray::Ray::new(rec.p, target-rec.p), world)*0.5
+        },
         None => {
             let unit_direction = r.direction.normalize();
             let t = (unit_direction.y + 1.0)*0.5;
@@ -68,12 +85,12 @@ fn main() {
                 let u = ((i as f32) + rng.next_f32()) / (width as f32);
                 let v = ((j as f32) + rng.next_f32()) / (height as f32);
                 let r = cam.get_ray(u, v);
-                col = col + color(r, &world);
+                col = col + color(&mut rng, r, &world);
             }
             let pixel =
-                [(col.red*255.99) as u8
-                ,(col.green*255.99) as u8
-                ,(col.blue*255.9) as u8
+                [(col.red/(num_samples as f32)*255.99) as u8
+                ,(col.green/(num_samples as f32)*255.99) as u8
+                ,(col.blue/(num_samples as f32)*255.9) as u8
                 ];
             buffer[(i,height-j-1)] = image::Rgb(pixel);
         }

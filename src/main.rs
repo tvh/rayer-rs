@@ -87,7 +87,7 @@ fn main() {
     let world = HitableList(list.as_ref());
     let cam = camera::Camera::default();
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::XorShiftRng::new_unseeded();
     for i in 0..width {
         for j in 0..height {
             let mut col: Rgb<D65, f32> = Rgb::new(0.0, 0.0, 0.0);
@@ -112,4 +112,23 @@ fn main() {
     let ref mut fout = File::create(output).unwrap();
 
     image::ImageRgb8(buffer).save(fout, image::PNG).unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::*;
+    use rand::*;
+
+    #[bench]
+    fn bench_thread_rng(bench: &mut Bencher) {
+        let mut rng = rand::thread_rng();
+        bench.iter(|| rng.next_f32());
+    }
+
+    #[bench]
+    fn bench_xorshift_rng(bench: &mut Bencher) {
+        let mut rng = XorShiftRng::new_unseeded();
+        bench.iter(|| rng.next_f32());
+    }
 }

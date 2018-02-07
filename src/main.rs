@@ -13,6 +13,7 @@ use euclid::*;
 use num_traits::Float;
 use palette::*;
 use palette::pixel::Srgb;
+use palette::white_point::D65;
 use rand::Rng;
 use std::fs::File;
 
@@ -39,7 +40,7 @@ where R: rand::Rng
     p
 }
 
-fn color<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<f32> {
+fn color<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<D65, f32> {
     let refl = reflectance(rng, r, world);
     color::xyz_from_wavelength(r.wl).into_rgb() * refl
 }
@@ -89,7 +90,7 @@ fn main() {
     let mut rng = rand::thread_rng();
     for i in 0..width {
         for j in 0..height {
-            let mut col: Rgb<f32> = Rgb::new(0.0, 0.0, 0.0);
+            let mut col: Rgb<D65, f32> = Rgb::new(0.0, 0.0, 0.0);
             for _ in 0..num_samples {
                 let u = ((i as f32) + rng.next_f32()) / (width as f32);
                 let v = ((j as f32) + rng.next_f32()) / (height as f32);
@@ -97,7 +98,8 @@ fn main() {
                 let r = cam.get_ray(u, v, wl);
                 col = col + color(&mut rng, r, &world);
             }
-            let col = Srgb::from(col/(num_samples as f32));
+            let col = (col/(num_samples as f32)).clamp();
+            let col = Srgb::from(col);
             let pixel =
                 [(col.red*255.99) as u8
                 ,(col.green*255.99) as u8

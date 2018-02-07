@@ -1,4 +1,5 @@
 use palette::*;
+use palette::white_point::D65;
 
 mod binned_spectrum;
 mod cie_1931;
@@ -11,6 +12,7 @@ pub trait HasReflectance {
 
 mod rgb_base_colors {
     use palette::*;
+    use palette::white_point::WhitePoint;
     use super::binned_spectrum::{BinnedSpectrum, BinData};
 
     pub struct Bin10;
@@ -114,7 +116,7 @@ mod rgb_base_colors {
         0.0496,
     ]);
 
-    pub fn rgb_to_spectrum(rgb: Rgb<f32>) -> ColorSpectrum10 {
+    pub fn rgb_to_spectrum<Wp: WhitePoint<f32>>(rgb: Rgb<Wp, f32>) -> ColorSpectrum10 {
         let red = rgb.red;
         let green = rgb.green;
         let blue = rgb.blue;
@@ -151,7 +153,9 @@ mod rgb_base_colors {
     }
 }
 
-impl<C: IntoColor<f32>> HasReflectance for C {
+impl<C> HasReflectance for C where
+    C: IntoColor<D65, f32>,
+{
     fn reflect(self, wl: f32) -> f32 {
         let color_rgb = self.into_rgb();
         let spectrum = rgb_base_colors::rgb_to_spectrum(color_rgb);
@@ -161,36 +165,75 @@ impl<C: IntoColor<f32>> HasReflectance for C {
 
 #[cfg(test)]
 mod tests {
+    use palette::white_point::WhitePoint;
     use super::*;
     use test::*;
 
     #[test]
     fn test_xyz_from_valid() {
+        let mut max_x = 0.0;
+        let mut max_x_freq = 0;
+        let mut max_y = 0.0;
+        let mut max_y_freq = 0;
+        let mut max_z = 0.0;
+        let mut max_z_freq = 0;
         for i in 380..780 {
-            let xyz = xyz_from_wavelength(i as f32);
-            let xyz_clamped = xyz.clamp();
-            assert_eq!(xyz, xyz_clamped, "Invalid xyz for wl={:}", i);
+            let xyz: Xyz<D65, f32> = xyz_from_wavelength(i as f32);
+            if xyz.x>max_x {
+                max_x = xyz.x;
+                max_x_freq = i;
+            }
+            if xyz.y>max_y {
+                max_y = xyz.y;
+                max_y_freq = i;
+            }
+            if xyz.z>max_z {
+                max_z = xyz.z;
+                max_z_freq = i;
+            }
         }
+        let white = D65::get_xyz();
+        let mut errors = String::new();
+        if max_x>white.x {
+            errors.push_str(&format!("Invalid x for wl={:}nm, x={:}\n", max_x_freq, max_x));
+        }
+        if max_y>white.y {
+            errors.push_str(&format!("Invalid y for wl={:}nm, y={:}\n", max_y_freq, max_y));
+        }
+        if max_z>white.z {
+            errors.push_str(&format!("Invalid z for wl={:}nm, z={:}\n", max_z_freq, max_z));
+        }
+        assert!(errors.len()==0, errors);
     }
 
     #[test]
     fn test_reflect_wavelength() {
+        let mut max_refl = 0.0;
+        let mut max_xyz = Xyz::new(0.0, 0.0, 0.0);
+        let mut max_freq = 0;
         for i in 380..780 {
             let xyz = xyz_from_wavelength(i as f32);
             let refl = xyz.reflect(i as f32);
-            assert!(refl<=1.0, "Got non-correct reflection for {:}nm: {}", i, refl);
+            if refl>max_refl {
+                max_refl=refl;
+                max_freq=i;
+                max_xyz=xyz;
+            }
         }
+        assert!(max_refl<=1.0, "Got non-correct reflection for wl={:}nm, refl={:}, xyz={:?}, rgb={:?}", max_freq, max_refl, max_xyz, max_xyz.into_rgb());
     }
 
     #[test]
     fn test_match_color_rgb() {
-        let white = Rgb::new(1.0, 1.0, 1.0);
-        for i in 380..780 {
-            let val = white.reflect(i as f32);
-            assert!((val - 1.0).abs()<0.001
-                    ,"White didn't match close to 1 for {:}nm, got instead: {:}"
-                    , i, val
-            );
+        for &intensity in [0.0, 0.3, 0.5, 0.7, 1.0].iter() {
+            let grey = Rgb::new(intensity, intensity, intensity);
+            for i in 380..780 {
+                let val = grey.reflect(i as f32);
+                assert!((val - intensity).abs()<0.001
+                        ,"Relectance is not like expected: wl={:}nm, intensity={:}, refl={:}"
+                        , i, intensity, val
+                );
+            }
         }
     }
 

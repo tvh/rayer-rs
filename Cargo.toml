@@ -9,4 +9,4 @@ rand = "0.4"
 image = "0.18.0"
 clap = "2.29.2"
 num-traits = "0.1.42"
-palette = "0.2.1"
+palette = { git = "https://github.com/Ogeon/palette.git", rev = "c5114e5" }

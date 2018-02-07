@@ -1,4 +1,5 @@
 #![feature(test)]
+#![feature(const_fn)]
 extern crate clap;
 extern crate euclid;
 extern crate image;

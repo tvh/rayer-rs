@@ -1,59 +1,79 @@
-use color::HasReflectance;
+use std::marker::PhantomData;
 use std::ops::*;
 
-/// A representation over the visible spectrum using 10 bins.
-/// .
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub struct ColorSpectrum10 {
-    spectrum: [f32; 10]
+use color::HasReflectance;
+
+pub trait BinData {
+    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]>;
+    const WL_0: f32;
+    const BIN_WIDTH: f32;
 }
 
-impl ColorSpectrum10 {
-    pub const fn new(spectrum: [f32; 10]) -> ColorSpectrum10 {
-        ColorSpectrum10{ spectrum }
+/// A binned representation of the visible spectrum.
+/// Values outside this range are clamped to the nearest index.
+#[derive(PartialEq, Debug)]
+pub struct BinnedSpectrum<T: BinData> {
+    spectrum: T::Spectrum,
+    marker: PhantomData<T>
+}
+
+impl<T: BinData> BinnedSpectrum<T> {
+    pub const fn new(spectrum: T::Spectrum) -> BinnedSpectrum<T> {
+        BinnedSpectrum{ spectrum, marker: PhantomData }
     }
 }
 
-impl Add for ColorSpectrum10 {
-    type Output = ColorSpectrum10;
-    fn add(self, other: ColorSpectrum10) -> ColorSpectrum10 {
+impl<T> Copy for BinnedSpectrum<T> where
+    T: BinData
+{}
+impl<T> Clone for BinnedSpectrum<T> where
+    T: BinData
+{
+    fn clone(&self) -> BinnedSpectrum<T> {
+        *self
+    }
+}
+
+impl<T: BinData> Add for BinnedSpectrum<T> {
+    type Output = BinnedSpectrum<T>;
+    fn add(self, other: BinnedSpectrum<T>) -> BinnedSpectrum<T> {
         let mut res = self.spectrum.clone();
-        for (a, b) in other.spectrum.iter().zip(res.iter_mut()) {
+        for (a, b) in other.spectrum.as_ref().iter().zip(res.as_mut().iter_mut()) {
             *b = *a+*b;
         }
-        ColorSpectrum10 { spectrum: res }
+        BinnedSpectrum::new(res)
     }
 }
 
-impl AddAssign for ColorSpectrum10 {
-    fn add_assign(&mut self, other: ColorSpectrum10) {
-        for (a, b) in other.spectrum.iter().zip(self.spectrum.iter_mut()) {
+impl<T: BinData> AddAssign for BinnedSpectrum<T> {
+    fn add_assign(&mut self, other: BinnedSpectrum<T>) {
+        for (a, b) in other.spectrum.as_ref().iter().zip(self.spectrum.as_mut().iter_mut()) {
             *b = *a+*b;
         }
     }
 }
 
-impl Mul<ColorSpectrum10> for f32 {
-    type Output = ColorSpectrum10;
-    fn mul(self, other: ColorSpectrum10) -> ColorSpectrum10 {
+impl<T: BinData> Mul<BinnedSpectrum<T>> for f32 {
+    type Output = BinnedSpectrum<T>;
+    fn mul(self, other: BinnedSpectrum<T>) -> BinnedSpectrum<T> {
         let mut res = other.spectrum.clone();
-        for x in res.iter_mut() {
+        for x in res.as_mut().iter_mut() {
             *x *= self;
         }
-        ColorSpectrum10 { spectrum: res }
+        BinnedSpectrum::new(res)
     }
 }
 
-impl HasReflectance for ColorSpectrum10 {
+impl<T: BinData> HasReflectance for BinnedSpectrum<T> {
     fn reflect(self, wl: f32) -> f32 {
-        let mut index = (wl as isize-380)/34;
+        let mut index: isize = ((wl-T::WL_0)/T::BIN_WIDTH) as isize;
         if index < 0 {
             index = 0;
         }
         if index >= 10 {
             index = 9;
         }
-        self.spectrum[index as usize]
+        self.spectrum.as_ref()[index as usize]
     }
 }
 
@@ -62,10 +82,19 @@ mod tests {
     use super::*;
     use test::*;
 
+    struct Bin10;
+    impl BinData for Bin10 {
+        type Spectrum = [f32; 10];
+        const WL_0: f32 = 380.0;
+        const BIN_WIDTH: f32 = 34.0;
+    }
+
+    type ColorSpectrum10 = BinnedSpectrum<Bin10>;
+
     #[bench]
     fn bench_add(bench: &mut Bencher) {
-        let a = black_box(ColorSpectrum10{ spectrum: [0.2; 10] });
-        let b = black_box(ColorSpectrum10{ spectrum: [0.4; 10] });
+        let a = black_box(ColorSpectrum10::new([0.2; 10]));
+        let b = black_box(ColorSpectrum10::new([0.4; 10]));
         bench.iter(|| {
             a+b
         });
@@ -73,7 +102,7 @@ mod tests {
 
     #[bench]
     fn bench_match(bench: &mut Bencher) {
-        let white = black_box(ColorSpectrum10{spectrum: [1.0; 10]});
+        let white = black_box(ColorSpectrum10::new([1.0; 10]));
         let wl = black_box(500.0);
         bench.iter(|| white.reflect(wl));
     }

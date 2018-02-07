@@ -26,9 +26,18 @@ pub fn xyz_from_wavelength(wl: f32) -> Xyz<f32> {
 }
 
 mod rgb_base_colors {
-    /// Values from "An RGB-to-spectrum conversion for reflectances"
-    use super::binned_spectrum::ColorSpectrum10;
     use palette::*;
+    use super::binned_spectrum::{BinnedSpectrum, BinData};
+
+    pub struct Bin10;
+    impl BinData for Bin10 {
+        type Spectrum = [f32; 10];
+        const WL_0: f32 = 380.0;
+        const BIN_WIDTH: f32 = 34.0;
+    }
+
+    /// Values from "An RGB-to-spectrum conversion for reflectances"
+    type ColorSpectrum10 = BinnedSpectrum<Bin10>;
 
     static WHITE_SPECTRUM: ColorSpectrum10 = ColorSpectrum10::new([
         1.0000,

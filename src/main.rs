@@ -11,6 +11,7 @@ use clap::{Arg, App};
 use euclid::*;
 use num_traits::Float;
 use palette::*;
+use palette::pixel::Srgb;
 use rand::Rng;
 use std::fs::File;
 
@@ -95,10 +96,11 @@ fn main() {
                 let r = cam.get_ray(u, v, wl);
                 col = col + color(&mut rng, r, &world);
             }
+            let col = Srgb::from(col/(num_samples as f32));
             let pixel =
-                [(col.red/(num_samples as f32)*255.99) as u8
-                ,(col.green/(num_samples as f32)*255.99) as u8
-                ,(col.blue/(num_samples as f32)*255.9) as u8
+                [(col.red*255.99) as u8
+                ,(col.green*255.99) as u8
+                ,(col.blue*255.9) as u8
                 ];
             buffer[(i,height-j-1)] = image::Rgb(pixel);
         }

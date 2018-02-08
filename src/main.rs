@@ -74,15 +74,22 @@ fn main() {
     let world = HitableList(list.as_ref());
     let cam = camera::Camera::default();
 
+    let wl_low = 390.0;
+    let wl_high = 700.0;
+    let wl_span = wl_high-wl_low;
     for i in 0..width {
         for j in 0..height {
             let mut col: Xyz<D65, f32> = Xyz::new(0.0, 0.0, 0.0);
+            let mut wl = gen_range(wl_low, wl_high);
             for _ in 0..num_samples {
                 let u = ((i as f32) + next_f32()) / (width as f32);
                 let v = ((j as f32) + next_f32()) / (height as f32);
-                let wl = gen_range(380.0, 780.0);
                 let r = cam.get_ray(u, v, wl);
                 col = col + color(r, &world);
+                wl += wl_span/(num_samples as f32);
+                if wl>wl_high {
+                    wl -= wl_span;
+                }
             }
             let col = (col.into_rgb()/(num_samples as f32)).clamp();
             let col = Srgb::from(col);

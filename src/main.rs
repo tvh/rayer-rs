@@ -20,6 +20,7 @@ mod color;
 mod hitable;
 mod ray;
 mod random;
+mod types;
 
 use color::HasReflectance;
 use hitable::hitable_list::*;
@@ -36,8 +37,12 @@ fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
     let rec = world.hit(r, 0.001, std::f32::MAX);
     match rec {
         Some(rec) => {
-            let target = rec.p + rec.normal + rand_in_unit_sphere();
-            reflectance(ray::Ray::new(rec.p, target-rec.p, r.wl), world)*0.5
+            match rec.reflection {
+                None => rec.emittance,
+                Some((attenuation, ray)) => {
+                    rec.emittance + reflectance(ray, world)*attenuation
+                }
+            }
         },
         None => {
             let unit_direction = r.direction.normalize();

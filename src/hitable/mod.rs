@@ -9,7 +9,9 @@ use ray::Ray;
 pub struct HitRecord<T> {
     pub t: T,
     pub p: Point3D<T>,
-    pub normal: Vector3D<T>
+    pub normal: Vector3D<T>,
+    pub emittance: f32,
+    pub reflection: Option<(f32, Ray<T>)>,
 }
 
 pub trait Hitable<T> {

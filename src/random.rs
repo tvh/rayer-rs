@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 use rand::{Rand, Rng, XorShiftRng, weak_rng};
 use rand::distributions::range::SampleRange;
 use euclid::*;
@@ -34,12 +35,12 @@ pub fn gen_range<T: PartialOrd + SampleRange>(low: T, high: T) -> T {
 
 #[derive(Clone, Debug)]
 pub struct XorShiftThreadRng {
-    rng: RefCell<XorShiftRng>,
+    rng: Rc<RefCell<XorShiftRng>>,
 }
 
 thread_local!(
-    static THREAD_RNG_KEY: RefCell<XorShiftRng> = {
-        RefCell::new(weak_rng())
+    static THREAD_RNG_KEY: Rc<RefCell<XorShiftRng>> = {
+        Rc::new(RefCell::new(weak_rng()))
     }
 );
 
@@ -70,6 +71,13 @@ mod tests {
     use rand;
     use rand::Rng;
     use euclid::Vector3D;
+
+    #[test]
+    fn test_gen_range() {
+        let res1 = super::gen_range(-1.0, 1.0);
+        let res2 = super::gen_range(-1.0 as f32, 1.0);
+        assert!(res1 != res2);
+    }
 
     #[bench]
     fn bench_thread_rng(bench: &mut Bencher) {

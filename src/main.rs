@@ -40,9 +40,9 @@ where R: rand::Rng
     p
 }
 
-fn color<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> Rgb<D65, f32> {
+fn color<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> Xyz<D65, f32> {
     let refl = reflectance(rng, r, world);
-    color::xyz_from_wavelength(r.wl).into_rgb() * refl
+    color::xyz_from_wavelength(r.wl) * refl
 }
 
 fn reflectance<R: rand::Rng>(rng: &mut R, r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
@@ -90,7 +90,7 @@ fn main() {
     let mut rng = rand::XorShiftRng::new_unseeded();
     for i in 0..width {
         for j in 0..height {
-            let mut col: Rgb<D65, f32> = Rgb::new(0.0, 0.0, 0.0);
+            let mut col: Xyz<D65, f32> = Xyz::new(0.0, 0.0, 0.0);
             for _ in 0..num_samples {
                 let u = ((i as f32) + rng.next_f32()) / (width as f32);
                 let v = ((j as f32) + rng.next_f32()) / (height as f32);
@@ -98,7 +98,7 @@ fn main() {
                 let r = cam.get_ray(u, v, wl);
                 col = col + color(&mut rng, r, &world);
             }
-            let col = (col/(num_samples as f32)).clamp();
+            let col = (col.into_rgb()/(num_samples as f32)).clamp();
             let col = Srgb::from(col);
             let pixel =
                 [(col.red*255.99) as u8

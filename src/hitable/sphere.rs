@@ -2,7 +2,6 @@ use euclid::*;
 use ray::Ray;
 use types::*;
 use hitable::*;
-use random::rand_in_unit_sphere;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Sphere<T> {
@@ -31,9 +30,7 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
             if t < t_max && t > t_min {
                 let p = r.point_at_parameter(t);
                 let normal = (p-self.center) / self.radius;
-                let direction = normal + rand_in_unit_sphere();
-                let ray = Ray::new(p, direction, r.wl);
-                return Some(HitRecord{normal, p, t, emittance: 0.0, reflection: Some((0.5, ray))});
+                return Some(HitRecord{normal, p, t, material: &Lambertian});
             }
         }
         None
@@ -56,8 +53,7 @@ mod tests {
                 let t = 2.0;
                 let p = Point3D::new(-1.0, 0.0, 0.0);
                 let normal = Vector3D::new(-1.0, 0.0, 0.0);
-                let emittance = 0.0;
-                let expected = HitRecord{t, p, normal, emittance, reflection: hit.reflection};
+                let expected = HitRecord{t, p, normal, material: &Lambertian};
                 assert_eq!(expected, hit);
             }
         }

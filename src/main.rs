@@ -18,8 +18,9 @@ use std::fs::File;
 mod camera;
 mod color;
 mod hitable;
-mod ray;
+mod material;
 mod random;
+mod ray;
 mod types;
 
 use color::HasReflectance;
@@ -37,10 +38,11 @@ fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
     let rec = world.hit(r, 0.001, std::f32::MAX);
     match rec {
         Some(rec) => {
-            match rec.reflection {
-                None => rec.emittance,
+            let mat_res = rec.material.scatter(r, rec);
+            match mat_res.reflection {
+                None => mat_res.emittance,
                 Some((attenuation, ray)) => {
-                    rec.emittance + reflectance(ray, world)*attenuation
+                    mat_res.emittance + reflectance(ray, world)*attenuation
                 }
             }
         },

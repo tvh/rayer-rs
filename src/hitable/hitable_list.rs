@@ -1,10 +1,10 @@
 use ray::Ray;
 use hitable::*;
-use num_traits::float::*;
+use types::*;
 
 pub struct HitableList<'a, T: 'a>(pub &'a[&'a Hitable<T>]);
 
-impl<'a, T: Float> Hitable<T> for HitableList<'a, T> {
+impl<'a, T: CoordinateBase> Hitable<T> for HitableList<'a, T> {
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         let mut closest_match = None;
         let mut closest_so_far = t_max;

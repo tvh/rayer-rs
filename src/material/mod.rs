@@ -41,3 +41,23 @@ impl<T: CoordinateBase, R: HasReflectance> Material<T> for Lambertian<R> {
         ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
     }
 }
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub struct Metal<R: HasReflectance> {
+    albedo: R
+}
+
+impl<R: HasReflectance> Metal<R> {
+    pub fn new(albedo: R) -> Self {
+        Metal { albedo }
+    }
+}
+
+impl<T: CoordinateBase, R: HasReflectance> Material<T> for Metal<R> {
+    fn scatter(&self, r_in: Ray<T>, hit_record: HitRecord<T>) -> ScatterResult<T> {
+        let reflected = r_in.direction - hit_record.normal*r_in.direction.dot(hit_record.normal)*T::from_f32(2.0);
+        let ray = Ray::new(hit_record.p, reflected, r_in.wl);
+        let attenuation = self.albedo.reflect(r_in.wl);
+        ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
+    }
+}

@@ -36,24 +36,33 @@ fn color(r: ray::Ray<f32>, world: &Hitable<f32>) -> Xyz<D65, f32> {
 }
 
 fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
-    let rec = world.hit(r, 0.001, std::f32::MAX);
-    match rec {
-        Some(rec) => {
-            let mat_res = rec.material.scatter(r, rec);
-            match mat_res.reflection {
-                None => mat_res.emittance,
-                Some((attenuation, ray)) => {
-                    mat_res.emittance + reflectance(ray, world)*attenuation
+    let mut r = r;
+    let mut res = 0.0;
+    let mut attenuation_acc = 1.0;
+    for _ in 0..10 {
+        let rec = world.hit(r, 0.001, std::f32::MAX);
+        match rec {
+            Some(rec) => {
+                let mat_res = rec.material.scatter(r, rec);
+                res += mat_res.emittance*attenuation_acc;
+                match mat_res.reflection {
+                    None => { return res; },
+                    Some((attenuation, ray)) => {
+                        r = ray;
+                        attenuation_acc *= attenuation;
+                    }
                 }
+            },
+            None => {
+                let unit_direction = r.direction.normalize();
+                let t = (unit_direction.y + 1.0)*0.5;
+                let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
+                res += rgb.reflect(r.wl)*attenuation_acc;
+                return res;
             }
-        },
-        None => {
-            let unit_direction = r.direction.normalize();
-            let t = (unit_direction.y + 1.0)*0.5;
-            let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
-            rgb.reflect(r.wl)
         }
     }
+    return res;
 }
 
 fn main() {
@@ -74,10 +83,15 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let material = Lambertian::new(Rgb::new(0.5, 0.5, 0.5));
+    let lambertian1 = Lambertian::new(Rgb::new(0.8, 0.3, 0.3));
+    let lambertian2 = Lambertian::new(Rgb::new(0.8, 0.8, 0.0));
+    let metal1 = Metal::new(Rgb::new(0.8, 0.6, 0.2));
+    let metal2 = Metal::new(Rgb::new(0.8, 0.8, 0.8));
     let spheres: Vec<Sphere<f32>> = vec![
-        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &material),
-        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &material)
+        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &lambertian1),
+        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &lambertian2),
+        Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, &metal1),
+        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, &metal2),
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());

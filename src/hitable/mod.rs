@@ -7,18 +7,12 @@ use types::*;
 use ray::Ray;
 use material::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct HitRecord<'a, T: 'a + CoordinateBase> {
     pub t: T,
     pub p: Point3D<T>,
     pub normal: Vector3D<T>,
     pub material: &'a Material<T>,
-}
-
-impl<'a, T: CoordinateBase> PartialEq<HitRecord<'a, T>> for HitRecord<'a, T> {
-    fn eq(&self, other: &HitRecord<'a, T>) -> bool {
-        self.t == other.t && self.p == other.p && self.normal == other.normal
-    }
 }
 
 pub trait Hitable<T: CoordinateBase> {

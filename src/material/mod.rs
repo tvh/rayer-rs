@@ -15,6 +15,12 @@ pub trait Material<T: CoordinateBase>: Debug {
     fn scatter(&self, r_in: Ray<T>, hit_record: HitRecord<T>) -> ScatterResult<T>;
 }
 
+impl<'a, 'b, T: CoordinateBase> PartialEq<Material<T>+'b> for Material<T>+'a {
+    fn eq(&self, other: &(Material<T>+'b)) -> bool {
+        format!("{:?}", self) == format!("{:?}", other)
+    }
+}
+
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Lambertian;
 

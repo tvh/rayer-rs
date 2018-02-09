@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use color::HasReflectance;
 use ray::Ray;
 use hitable::*;
 use types::*;
@@ -22,16 +23,21 @@ impl<'a, 'b, T: CoordinateBase> PartialEq<Material<T>+'b> for Material<T>+'a {
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Lambertian;
-
-impl Default for Lambertian {
-    fn default() -> Lambertian { Lambertian }
+pub struct Lambertian<R: HasReflectance> {
+    albedo: R
 }
 
-impl<T: CoordinateBase> Material<T> for Lambertian {
+impl<R: HasReflectance> Lambertian<R> {
+    pub fn new(albedo: R) -> Self {
+        Lambertian { albedo }
+    }
+}
+
+impl<T: CoordinateBase, R: HasReflectance> Material<T> for Lambertian<R> {
     fn scatter(&self, r_in: Ray<T>, hit_record: HitRecord<T>) -> ScatterResult<T> {
         let direction = hit_record.normal + rand_in_unit_sphere();
         let ray = Ray::new(hit_record.p, direction, r_in.wl);
-        ScatterResult{ emittance: 0.0, reflection: Some((0.5, ray))}
+        let attenuation = self.albedo.reflect(r_in.wl);
+        ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
     }
 }

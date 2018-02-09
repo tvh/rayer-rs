@@ -3,19 +3,24 @@ use ray::Ray;
 use types::*;
 use hitable::*;
 
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Sphere<T> {
+#[derive(PartialEq, Debug, Clone)]
+pub struct Sphere<'a, T: CoordinateBase + 'a> {
     center: Point3D<T>,
-    radius: T
+    radius: T,
+    material: &'a Material<T>,
 }
 
-impl<T: CoordinateBase> Sphere<T> {
-    pub fn new(center: Point3D<T>, radius: T) -> Sphere<T> {
-        Sphere{center, radius}
+impl<'a, T: CoordinateBase + 'a> Sphere<'a, T> {
+    pub fn new(center: Point3D<T>, radius: T, material: &'a Material<T>) -> Sphere<T> {
+        Sphere{
+            center,
+            radius,
+            material
+        }
     }
 }
 
-impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
+impl<'a, T: 'a + CoordinateBase> Hitable<T> for Sphere<'a, T> {
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         let oc = r.origin - self.center;
         let a = r.direction.dot(r.direction);
@@ -30,7 +35,7 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
             if t < t_max && t > t_min {
                 let p = r.point_at_parameter(t);
                 let normal = (p-self.center) / self.radius;
-                return Some(HitRecord{normal, p, t, material: &Lambertian});
+                return Some(HitRecord{normal, p, t, material: self.material});
             }
         }
         None
@@ -40,11 +45,13 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use palette::*;
 
     #[test]
     fn test_hit() {
         // TODO: Do more than this smoke test
-        let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0);
+        let material = Lambertian::new(Rgb::new(0.5, 0.5, 0.5));
+        let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0, &material);
         let ray = Ray::new(Point3D::new(-3.0, 0.0, 0.0), Vector3D::new(1.0, 0.0, 0.0), 500.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
@@ -53,7 +60,7 @@ mod tests {
                 let t = 2.0;
                 let p = Point3D::new(-1.0, 0.0, 0.0);
                 let normal = Vector3D::new(-1.0, 0.0, 0.0);
-                let expected = HitRecord{t, p, normal, material: &Lambertian};
+                let expected = HitRecord{t, p, normal, material: &material};
                 assert_eq!(expected, hit);
             }
         }

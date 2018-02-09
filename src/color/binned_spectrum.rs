@@ -1,10 +1,11 @@
 use std::marker::PhantomData;
 use std::ops::*;
+use std::fmt::Debug;
 
 use color::HasReflectance;
 
-pub trait BinData {
-    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]>;
+pub trait BinData: Debug {
+    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]> + Debug;
     const WL_0: f32;
     const BIN_WIDTH: f32;
 }
@@ -65,7 +66,7 @@ impl<T: BinData> Mul<BinnedSpectrum<T>> for f32 {
 }
 
 impl<T: BinData> HasReflectance for BinnedSpectrum<T> {
-    fn reflect(self, wl: f32) -> f32 {
+    fn reflect(&self, wl: f32) -> f32 {
         let mut index: isize = ((wl-T::WL_0)/T::BIN_WIDTH) as isize;
         if index < 0 {
             index = 0;
@@ -82,6 +83,7 @@ mod tests {
     use super::*;
     use test::*;
 
+    #[derive(Debug)]
     struct Bin10;
     impl BinData for Bin10 {
         type Spectrum = [f32; 10];

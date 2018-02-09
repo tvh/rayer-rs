@@ -24,9 +24,10 @@ mod ray;
 mod types;
 
 use color::HasReflectance;
-use hitable::hitable_list::*;
 use hitable::Hitable;
+use hitable::hitable_list::*;
 use hitable::sphere::*;
+use material::*;
 use random::*;
 
 fn color(r: ray::Ray<f32>, world: &Hitable<f32>) -> Xyz<D65, f32> {
@@ -73,9 +74,10 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
+    let material = Lambertian::new(Rgb::new(0.5, 0.5, 0.5));
     let spheres: Vec<Sphere<f32>> = vec![
-        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5),
-        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0)
+        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &material),
+        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &material)
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());

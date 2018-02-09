@@ -1,20 +1,22 @@
 use palette::*;
 use palette::white_point::D65;
+use std::fmt::Debug;
 
 mod binned_spectrum;
 mod cie_1931;
 
 pub use self::cie_1931::xyz_from_wavelength;
 
-pub trait HasReflectance {
-    fn reflect(self, wl: f32) -> f32;
+pub trait HasReflectance: Debug {
+    fn reflect(&self, wl: f32) -> f32;
 }
 
 mod rgb_base_colors {
     use palette::*;
-    use palette::white_point::WhitePoint;
+    use palette::white_point::D65;
     use super::binned_spectrum::{BinnedSpectrum, BinData};
 
+    #[derive(Debug)]
     pub struct Bin10;
     impl BinData for Bin10 {
         type Spectrum = [f32; 10];
@@ -116,7 +118,7 @@ mod rgb_base_colors {
         0.0496,
     ]);
 
-    pub fn rgb_to_spectrum<Wp: WhitePoint<f32>>(rgb: Rgb<Wp, f32>) -> ColorSpectrum10 {
+    pub fn rgb_to_spectrum(rgb: Rgb<D65, f32>) -> ColorSpectrum10 {
         let red = rgb.red;
         let green = rgb.green;
         let blue = rgb.blue;
@@ -154,10 +156,10 @@ mod rgb_base_colors {
 }
 
 impl<C> HasReflectance for C where
-    C: IntoColor<D65, f32>,
+    C: IntoColor<D65, f32> + Debug + Copy,
 {
-    fn reflect(self, wl: f32) -> f32 {
-        let color_rgb = self.into_rgb();
+    fn reflect(&self, wl: f32) -> f32 {
+        let color_rgb = self.into_rgb().clamp();
         let spectrum = rgb_base_colors::rgb_to_spectrum(color_rgb);
         spectrum.reflect(wl)
     }
@@ -230,7 +232,7 @@ mod tests {
             for i in 380..780 {
                 let val = grey.reflect(i as f32);
                 assert!((val - intensity).abs()<0.001
-                        ,"Relectance is not like expected: wl={:}nm, intensity={:}, refl={:}"
+                        ,"Relfectance is not like expected: wl={:}nm, intensity={:}, refl={:}"
                         , i, intensity, val
                 );
             }

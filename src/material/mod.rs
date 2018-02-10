@@ -77,14 +77,35 @@ fn reflect<T: CoordinateBase>(v: Vector3D<T>, n: Vector3D<T>) -> Vector3D<T> {
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Dielectric<T: CoordinateBase> {
-    ref_idx: T,
+pub struct Dielectric {
+    b1: f32,
+    b2: f32,
+    b3: f32,
+    c1: f32,
+    c2: f32,
+    c3: f32,
 }
 
-impl<T: CoordinateBase> Dielectric<T> {
-    pub fn new(ref_idx: T) -> Self {
-        Dielectric { ref_idx }
-    }
+impl Dielectric {
+    pub const BAF10: Dielectric =
+        Dielectric{
+            b1: 1.5851495,
+            b2: 0.143559385,
+            b3: 1.08521269,
+            c1: 0.00926681282*1e6,
+            c2: 0.0424489805*1e6,
+            c3: 105.613573*1e6,
+        };
+
+    pub const SF11: Dielectric =
+        Dielectric{
+            b1: 1.73759695,
+            b2: 0.313747346,
+            b3: 1.89878101,
+            c1: 0.013188707*1e6,
+            c2: 0.0623068142*1e6,
+            c3: 155.23629*1e6,
+        };
 }
 
 fn refract<T: CoordinateBase>(v: Vector3D<T>, n: Vector3D<T>, ni_over_nt: T) -> Option<Vector3D<T>> {
@@ -105,17 +126,24 @@ fn schlick<T: CoordinateBase>(cosine: T, ref_idx: T) -> T {
     r0 + (T::one() - r0)*T::powf(T::one()-cosine, From::from(5.0))
 }
 
-impl<T: CoordinateBase> Material<T> for Dielectric<T> {
+impl<T: CoordinateBase> Material<T> for Dielectric {
     fn scatter(&self, r_in: Ray<T>, rec: HitRecord<T>) -> ScatterResult<T> {
+        let wl_2 = r_in.wl*r_in.wl;
+        let ref_idx_squared =
+            1.0 +
+            self.b1*wl_2/(wl_2-self.c1) +
+            self.b2*wl_2/(wl_2-self.c2) +
+            self.b3*wl_2/(wl_2-self.c3);
+        let ref_idx: T = From::from(ref_idx_squared.sqrt());
         let (outward_normal, ni_over_nt, cosine) =
             if r_in.direction.dot(rec.normal) > T::zero() {
                 (-rec.normal,
-                 self.ref_idx,
-                 self.ref_idx * r_in.direction.dot(rec.normal) / r_in.direction.length()
+                 ref_idx,
+                 ref_idx * r_in.direction.dot(rec.normal) / r_in.direction.length()
                 )
             } else {
                 (rec.normal,
-                 self.ref_idx.recip(),
+                 ref_idx.recip(),
                  -r_in.direction.dot(rec.normal) / r_in.direction.length()
                 )
             };
@@ -126,7 +154,7 @@ impl<T: CoordinateBase> Material<T> for Dielectric<T> {
                 Ray::new(rec.p, reflected, r_in.wl)
             },
             Some(refracted) => {
-                if rand::<T>() < schlick(cosine, self.ref_idx) {
+                if rand::<T>() < schlick(cosine, ref_idx) {
                     let reflected = reflect(r_in.direction, rec.normal);
                     Ray::new(rec.p, reflected, r_in.wl)
                 } else {

@@ -23,6 +23,7 @@ mod random;
 mod ray;
 mod types;
 
+use num_traits::Float;
 use color::HasReflectance;
 use hitable::Hitable;
 use hitable::hitable_list::*;
@@ -40,7 +41,7 @@ fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;
     for _ in 0..20 {
-        let rec = world.hit(r, 0.001, std::f32::MAX);
+        let rec = world.hit(r, f32::epsilon(), std::f32::MAX);
         match rec {
             Some(rec) => {
                 let mat_res = rec.material.scatter(r, rec);
@@ -77,8 +78,8 @@ fn main() {
         .get_matches();
     let output = matches.value_of("output").unwrap();
 
-    let height = 200;
-    let width = 400;
+    let height = 600;
+    let width = 800;
     let num_samples = 100;
 
     let mut buffer = image::ImageBuffer::new(width, height);
@@ -86,23 +87,24 @@ fn main() {
     let mat1 = Lambertian::new(Rgb::new(0.1, 0.2, 0.5));
     let mat2 = Lambertian::new(Rgb::new(0.8, 0.8, 0.0));
     let mat3 = Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0);
-    let mat4 = Dielectric::new(1.5);
+    let mat4 = Dielectric::SF11;
     let spheres: Vec<Sphere<f32>> = vec![
         Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &mat1),
         Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &mat2),
         Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, &mat3),
         Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, &mat4),
-        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), -0.45, &mat4),
+        Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, &mat4),
+        Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, &mat4),
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());
-    let look_from = Point3D::new(3.0, 3.0, 2.0);
-    let look_at = Point3D::new(0.0, 0.0, -1.0);
+    let look_from = Point3D::new(-4.0, 0.7, 3.0);
+    let look_at = Point3D::new(-1.0, 0.0, -1.0);
     let focus_dist = (look_from-look_at).length();
-    let aperture = 2.0;
+    let aperture = 0.1;
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
-    let cam = camera::Camera::new(look_from, look_at, up, 20.0, width as f32/height as f32, aperture, focus_dist);
+    let cam = camera::Camera::new(look_from, look_at, up, 15.0, width as f32/height as f32, aperture, focus_dist);
 
     let wl_low = 390.0;
     let wl_high = 700.0;

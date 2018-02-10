@@ -85,8 +85,8 @@ fn main() {
 
     let lambertian1 = Lambertian::new(Rgb::new(0.8, 0.3, 0.3));
     let lambertian2 = Lambertian::new(Rgb::new(0.8, 0.8, 0.0));
-    let metal1 = Metal::new(Rgb::new(0.8, 0.6, 0.2));
-    let metal2 = Metal::new(Rgb::new(0.8, 0.8, 0.8));
+    let metal1 = Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0);
+    let metal2 = Metal::new(Rgb::new(0.8, 0.8, 0.8), 0.3);
     let spheres: Vec<Sphere<f32>> = vec![
         Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &lambertian1),
         Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &lambertian2),

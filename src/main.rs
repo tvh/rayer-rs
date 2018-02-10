@@ -96,7 +96,10 @@ fn main() {
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());
-    let cam = camera::Camera::default();
+    let look_from = Point3D::new(-2.0, 2.0, 1.0);
+    let look_at = Point3D::new(0.0, 0.0, -1.0);
+    let up = Vector3D::new(0.0, 1.0, 0.0);
+    let cam = camera::Camera::new(look_from, look_at, up, 90.0, width as f32/height as f32);
 
     let wl_low = 390.0;
     let wl_high = 700.0;

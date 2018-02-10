@@ -159,7 +159,7 @@ impl<C> HasReflectance for C where
     C: IntoColor<D65, f32> + Debug + Copy,
 {
     fn reflect(&self, wl: f32) -> f32 {
-        let color_rgb = self.into_rgb().clamp();
+        let color_rgb = self.into_rgb();
         let spectrum = rgb_base_colors::rgb_to_spectrum(color_rgb);
         spectrum.reflect(wl)
     }

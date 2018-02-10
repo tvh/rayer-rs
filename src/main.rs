@@ -23,25 +23,25 @@ mod random;
 mod ray;
 mod types;
 
-use num_traits::Float;
 use color::HasReflectance;
 use hitable::Hitable;
 use hitable::hitable_list::*;
 use hitable::sphere::*;
 use material::*;
 use random::*;
+use types::*;
 
-fn color(r: ray::Ray<f32>, world: &Hitable<f32>) -> Xyz<D65, f32> {
+fn color<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> Xyz<D65, f32> {
     let refl = reflectance(r, world);
     color::xyz_from_wavelength(r.wl) * refl
 }
 
-fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
+fn reflectance<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> f32 {
     let mut r = r;
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;
     for _ in 0..20 {
-        let rec = world.hit(r, f32::epsilon(), std::f32::MAX);
+        let rec = world.hit(r, T::epsilon(), T::max_value());
         match rec {
             Some(rec) => {
                 let mat_res = rec.material.scatter(r, rec);
@@ -56,7 +56,7 @@ fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
             },
             None => {
                 let unit_direction = r.direction.normalize();
-                let t = (unit_direction.y + 1.0)*0.5;
+                let t: f32 = (unit_direction.y.to_f32().unwrap() + 1.0)*0.5;
                 let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
                 res += rgb.reflect(r.wl)*attenuation_acc;
                 return res;

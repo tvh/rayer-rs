@@ -6,13 +6,26 @@ use euclid::*;
 use num_traits::Float;
 
 pub fn rand_in_unit_sphere<T>() -> Vector3D<T>
-where T: Float + SampleRange
+where T: Float + Rand
 {
     let mut rng = thread_rng();
     let mut p: Vector3D<T>;
-    let mut gen_component = || rng.gen_range(-T::one(), T::one());
+    let mut gen_component = || T::rand(&mut rng).mul_add(T::one()+T::one(), -T::one());
     while {
-        p = Vector3D::new(gen_component(), gen_component(), gen_component());
+        p = vec3(gen_component(), gen_component(), gen_component());
+        p.dot(p) >= T::one()
+    } {}
+    p
+}
+
+pub fn rand_in_unit_disk<T>() -> Vector2D<T>
+where T: Float + Rand
+{
+    let mut rng = thread_rng();
+    let mut p: Vector2D<T>;
+    let mut gen_component = || T::rand(&mut rng).mul_add(T::one()+T::one(), -T::one());
+    while {
+        p = vec2(gen_component(), gen_component());
         p.dot(p) >= T::one()
     } {}
     p
@@ -70,7 +83,7 @@ mod tests {
     use test::*;
     use rand;
     use rand::Rng;
-    use euclid::Vector3D;
+    use euclid::*;
 
     #[test]
     fn test_gen_range() {
@@ -106,7 +119,17 @@ mod tests {
     }
 
     #[bench]
-    fn bench_rand_in_unit_sphere(bench: &mut Bencher) {
+    fn bench_rand_in_unit_sphere_f32(bench: &mut Bencher) {
         bench.iter(|| super::rand_in_unit_sphere() as Vector3D<f32>);
+    }
+
+    #[bench]
+    fn bench_rand_in_unit_sphere_f64(bench: &mut Bencher) {
+        bench.iter(|| super::rand_in_unit_sphere() as Vector3D<f64>);
+    }
+
+    #[bench]
+    fn bench_rand_in_unit_disk(bench: &mut Bencher) {
+        bench.iter(|| super::rand_in_unit_disk() as Vector2D<f32>);
     }
 }

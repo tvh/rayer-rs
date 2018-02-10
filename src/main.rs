@@ -39,7 +39,7 @@ fn reflectance(r: ray::Ray<f32>, world: &Hitable<f32>) -> f32 {
     let mut r = r;
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;
-    for _ in 0..10 {
+    for _ in 0..20 {
         let rec = world.hit(r, 0.001, std::f32::MAX);
         match rec {
             Some(rec) => {
@@ -83,15 +83,16 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let lambertian1 = Lambertian::new(Rgb::new(0.8, 0.3, 0.3));
-    let lambertian2 = Lambertian::new(Rgb::new(0.8, 0.8, 0.0));
-    let metal1 = Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0);
-    let metal2 = Metal::new(Rgb::new(0.8, 0.8, 0.8), 0.3);
+    let mat1 = Lambertian::new(Rgb::new(0.1, 0.2, 0.5));
+    let mat2 = Lambertian::new(Rgb::new(0.8, 0.8, 0.0));
+    let mat3 = Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0);
+    let mat4 = Dielectric::new(1.5);
     let spheres: Vec<Sphere<f32>> = vec![
-        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &lambertian1),
-        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &lambertian2),
-        Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, &metal1),
-        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, &metal2),
+        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &mat1),
+        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &mat2),
+        Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, &mat3),
+        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, &mat4),
+        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), -0.45, &mat4),
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());

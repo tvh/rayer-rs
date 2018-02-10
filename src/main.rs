@@ -118,6 +118,7 @@ fn main() {
                     wl -= wl_span;
                 }
             }
+            let col = col*3.0;
             let col = (col.into_rgb()/(num_samples as f32)).clamp();
             let col = Srgb::from(col);
             let pixel =

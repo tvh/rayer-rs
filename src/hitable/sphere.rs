@@ -32,6 +32,16 @@ impl<T: CoordinateBase> Sphere<T> {
 }
 
 impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
+    fn centroid(&self) -> Point3D<T> {
+        self.center
+    }
+    fn bbox(&self) -> BoundingBox<T> {
+        let diff = vec3(self.radius, self.radius, self.radius);
+        BoundingBox {
+            low: self.center-diff,
+            high: self.center+diff,
+        }
+    }
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         let oc = r.origin - self.center;
         let a = r.direction.dot(r.direction);

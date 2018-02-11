@@ -15,6 +15,23 @@ pub struct Triangle<T: CoordinateBase> {
 }
 
 impl<T: CoordinateBase> Hitable<T> for Triangle<T> {
+    fn bbox(&self) -> BoundingBox<T> {
+        let mut low = self.vert0;
+        let mut high = self.vert0;
+        for obj in [self.vert1, self.vert2].iter() {
+            low = point3(
+                T::min(low.x, obj.x),
+                T::min(low.y, obj.y),
+                T::min(low.z, obj.z),
+            );
+            high = point3(
+                T::max(high.x, obj.x),
+                T::max(high.y, obj.y),
+                T::max(high.z, obj.z),
+            );
+        }
+        BoundingBox { low, high }
+    }
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         // find vectors for two edges sharing vert0
         let edge1 = self.vert1 - self.vert0;

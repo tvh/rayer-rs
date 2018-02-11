@@ -1,6 +1,7 @@
 #![feature(test)]
 #![feature(const_fn)]
 extern crate clap;
+extern crate decorum;
 extern crate euclid;
 extern crate image;
 extern crate num_traits;

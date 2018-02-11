@@ -1,5 +1,6 @@
 use hitable::*;
 use std::sync::Arc;
+use decorum::Ordered;
 
 pub enum BVH<T: CoordinateBase> {
     Empty,
@@ -14,15 +15,51 @@ pub enum BVH<T: CoordinateBase> {
     }
 }
 
+impl<T: CoordinateBase> BVH<T> {
+    pub fn initialize(items: &[Arc<Hitable<T>>]) -> BVH<T> {
+        #[derive(Clone, Copy)]
+        enum Axis {
+            X, Y, Z
+        }
+        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>], direction: Axis) -> BVH<T> {
+            match items.len() {
+                0 => { return BVH::Empty },
+                1 => {
+                    let item = items[0].clone();
+                    let bbox = item.bbox();
+                    return BVH::Tip {
+                        hitable: item,
+                        bbox: bbox
+                    }
+                },
+                _ => {}
+            }
+            match direction {
+                Axis::X => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().x)),
+                Axis::Y => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().y)),
+                Axis::Z => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().z))
+            };
+            let split_location = items.len()/2;
+            let (mut left_items, mut right_items) = items.split_at_mut(split_location);
+            let direction = match direction {
+                Axis::X => Axis::Y,
+                Axis::Y => Axis::Z,
+                Axis::Z => Axis::X
+            };
+            let left = go(&mut left_items, direction);
+            let right = go(&mut right_items, direction);
+            let bbox = left.bbox().merge(right.bbox());
+            BVH::Bin{ left: Arc::new(left), right: Arc::new(right), bbox }
+        }
+        let mut items: Vec<_> = items.iter().map(|x|x.clone()).collect();
+        go(items.as_mut_slice(), Axis::X)
+    }
+}
+
 impl<T: CoordinateBase> Hitable<T> for BVH<T> {
     fn bbox(&self) -> BoundingBox<T> {
         match self {
-            &BVH::Empty => {
-                BoundingBox {
-                    low: point3(T::max_value(), T::max_value(), T::max_value()),
-                    high: point3(T::min_value(), T::min_value(), T::min_value()),
-                }
-            }
+            &BVH::Empty => BoundingBox::<T>::empty(),
             &BVH::Bin { bbox, .. } => bbox,
             &BVH::Tip { bbox, .. } => bbox
         }
@@ -54,7 +91,6 @@ impl<T: CoordinateBase> Hitable<T> for BVH<T> {
                         None => (),
                         Some(hit) => {
                             closest_match = Some(hit);
-                            closest_so_far = hit.t;
                         }
                     }
                 }

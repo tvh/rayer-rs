@@ -31,13 +31,34 @@ impl<T: CoordinateBase> BoundingBox<T> {
         let t_max = T::min(t_max, T::max(t_x0, t_x1));
         let t_y0 = self.low.y - r.origin.y / r.direction.y;
         let t_y1 = self.high.y - r.origin.y / r.direction.y;
-        let t_min = T::max(t_min, T::min(t_x0, t_x1));
-        let t_max = T::min(t_max, T::max(t_x0, t_x1));
+        let t_min = T::max(t_min, T::min(t_y0, t_y1));
+        let t_max = T::min(t_max, T::max(t_y0, t_y1));
         let t_z0 = self.low.z - r.origin.z / r.direction.z;
         let t_z1 = self.high.z - r.origin.z / r.direction.z;
-        let t_min = T::max(t_min, T::min(t_x0, t_x1));
-        let t_max = T::min(t_max, T::max(t_x0, t_x1));
+        let t_min = T::max(t_min, T::min(t_z0, t_z1));
+        let t_max = T::min(t_max, T::max(t_z0, t_z1));
         t_max >= t_min
+    }
+
+    pub fn empty() -> BoundingBox<T> {
+        BoundingBox {
+            low: point3(T::max_value(), T::max_value(), T::max_value()),
+            high: point3(T::min_value(), T::min_value(), T::min_value()),
+        }
+    }
+
+    pub fn merge(self, other: BoundingBox<T>) -> BoundingBox<T> {
+        let low = point3(
+            T::min(self.low.x, other.low.x),
+            T::min(self.low.y, other.low.y),
+            T::min(self.low.z, other.low.z),
+        );
+        let high = point3(
+            T::max(self.high.x, other.high.x),
+            T::max(self.high.y, other.high.y),
+            T::max(self.high.z, other.high.z),
+        );
+        BoundingBox { low, high }
     }
 }
 

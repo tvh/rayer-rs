@@ -1,9 +1,10 @@
 [package]
 name = "rayer"
 version = "0.1.0"
-authors = ["Timo von Holtz <vonholtz@cp-med.com>"]
+authors = ["Timo von Holtz <tvh@tvholtz.de>"]
 
 [dependencies]
+decorum = "0.0.8"
 euclid = "0.16.4"
 rand = "0.4"
 image = "0.18.0"

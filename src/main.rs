@@ -82,7 +82,7 @@ fn main() {
 
     let height = 600;
     let width = 800;
-    let num_samples = 10;
+    let num_samples = 100;
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
@@ -105,7 +105,7 @@ fn main() {
     let aperture = 0.1;
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
-    let cam = camera::Camera::new(look_from, look_at, up, 70.0, width as f32/height as f32, aperture, focus_dist);
+    let cam = camera::Camera::new(look_from, look_at, up, 15.0, width as f32/height as f32, aperture, focus_dist);
 
     let wl_low = 390.0;
     let wl_high = 700.0;

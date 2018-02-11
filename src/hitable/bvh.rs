@@ -68,30 +68,31 @@ impl<T: CoordinateBase> Hitable<T> for BVH<T> {
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         match self {
             &BVH::Empty => None,
-            &BVH::Tip { ref hitable, .. } => {
-                hitable.hit(r, t_min, t_max)
+            &BVH::Tip { ref hitable, bbox } => {
+                if bbox.intersects(r, t_min, t_max) {
+                    hitable.hit(r, t_min, t_max)
+                } else {
+                    None
+                }
             },
-            &BVH::Bin { ref left, ref right, .. } => {
+            &BVH::Bin { ref left, ref right, bbox } => {
+                if !bbox.intersects(r, t_min, t_max) {
+                    return None;
+                }
                 let mut closest_match = None;
                 let mut closest_so_far = t_max;
 
-                let left_bbox = left.bbox();
-                if left_bbox.intersects(r, t_min, closest_so_far) {
-                    match left.hit(r, t_min, closest_so_far) {
-                        None => (),
-                        Some(hit) => {
-                            closest_match = Some(hit);
-                            closest_so_far = hit.t;
-                        }
+                match left.hit(r, t_min, closest_so_far) {
+                    None => (),
+                    Some(hit) => {
+                        closest_match = Some(hit);
+                        closest_so_far = hit.t;
                     }
                 }
-                let right_bbox = left.bbox();
-                if right_bbox.intersects(r, t_min, closest_so_far) {
-                    match right.hit(r, t_min, closest_so_far) {
-                        None => (),
-                        Some(hit) => {
-                            closest_match = Some(hit);
-                        }
+                match right.hit(r, t_min, closest_so_far) {
+                    None => (),
+                    Some(hit) => {
+                        closest_match = Some(hit);
                     }
                 }
                 closest_match

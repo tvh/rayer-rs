@@ -38,7 +38,7 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
     fn bbox(&self) -> BoundingBox<T> {
         let abs_radius = self.radius.abs();
         let diff = vec3(abs_radius, abs_radius, abs_radius);
-        BoundingBox::NonEmpty {
+        BoundingBox {
             low: self.center-diff,
             high: self.center+diff,
         }

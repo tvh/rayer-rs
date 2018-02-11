@@ -18,19 +18,15 @@ pub struct HitRecord<'a, T: 'a + CoordinateBase> {
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub enum BoundingBox<T: CoordinateBase> {
-    Empty,
-    NonEmpty{
-        low: Point3D<T>,
-        high: Point3D<T>,
-    }
+pub struct BoundingBox<T: CoordinateBase> {
+    low: Point3D<T>,
+    high: Point3D<T>,
 }
 
 impl<T: CoordinateBase> BoundingBox<T> {
     pub fn intersects(&self, r: Ray<T>, t_min: T, t_max: T) -> bool {
         match self {
-            &BoundingBox::Empty => false,
-            &BoundingBox::NonEmpty { low, high } => {
+            &BoundingBox { low, high } => {
                 let t_x0 = (low.x - r.origin.x) / r.direction.x;
                 let t_x1 = (high.x - r.origin.x) / r.direction.x;
                 let t_min = T::max(t_min, T::min(t_x0, t_x1));
@@ -49,14 +45,15 @@ impl<T: CoordinateBase> BoundingBox<T> {
     }
 
     pub fn empty() -> BoundingBox<T> {
-        BoundingBox::Empty
+        BoundingBox {
+            low: point3(T::max_value(), T::max_value(), T::max_value()),
+            high: point3(T::min_value(), T::min_value(), T::min_value()),
+        }
     }
 
     pub fn merge(self, other: BoundingBox<T>) -> BoundingBox<T> {
         match (self, other) {
-            (BoundingBox::Empty, _) => other,
-            (_, BoundingBox::Empty) => self,
-            (BoundingBox::NonEmpty { low: low_0, high: high_0 }, BoundingBox::NonEmpty { low: low_1, high: high_1 }) => {
+            (BoundingBox { low: low_0, high: high_0 }, BoundingBox { low: low_1, high: high_1 }) => {
                 let low = point3(
                     T::min(low_0.x, low_1.x),
                     T::min(low_0.y, low_1.y),
@@ -67,7 +64,7 @@ impl<T: CoordinateBase> BoundingBox<T> {
                     T::max(high_0.y, high_1.y),
                     T::max(high_0.z, high_1.z),
                 );
-                BoundingBox::NonEmpty { low, high }
+                BoundingBox { low, high }
             }
         }
     }
@@ -77,8 +74,7 @@ pub trait Hitable<T: CoordinateBase> {
     fn centroid(&self) -> Point3D<T> {
         let bbox = self.bbox();
         match bbox {
-            BoundingBox::Empty => point3(T::max_value(), T::max_value(), T::max_value()),
-            BoundingBox::NonEmpty{ low, high } => {
+            BoundingBox{ low, high } => {
                 point3(
                     (low.x + high.x)*From::from(0.5),
                     (low.y + high.y)*From::from(0.5),

@@ -155,12 +155,10 @@ mod rgb_base_colors {
     }
 }
 
-impl<C> HasReflectance for C where
-    C: IntoColor<D65, f32> + Debug + Copy + Send + Sync,
+impl HasReflectance for Rgb<D65, f32> where
 {
     fn reflect(&self, wl: f32) -> f32 {
-        let color_rgb = self.into_rgb();
-        let spectrum = rgb_base_colors::rgb_to_spectrum(color_rgb);
+        let spectrum = rgb_base_colors::rgb_to_spectrum(*self);
         spectrum.reflect(wl)
     }
 }
@@ -215,7 +213,7 @@ mod tests {
         let mut max_freq = 0;
         for i in 380..780 {
             let xyz = xyz_from_wavelength(i as f32);
-            let refl = xyz.reflect(i as f32);
+            let refl = xyz.into_rgb().reflect(i as f32);
             if refl>max_refl {
                 max_refl=refl;
                 max_freq=i;

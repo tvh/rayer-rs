@@ -27,7 +27,7 @@ mod types;
 
 use color::HasReflectance;
 use hitable::Hitable;
-use hitable::hitable_list::*;
+use hitable::bvh::*;
 use hitable::sphere::*;
 use material::*;
 use random::*;
@@ -82,7 +82,7 @@ fn main() {
 
     let height = 600;
     let width = 800;
-    let num_samples = 100;
+    let num_samples = 10;
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
@@ -90,23 +90,22 @@ fn main() {
     let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
     let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF11);
-    let spheres: Vec<Sphere<f32>> = vec![
-        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1),
-        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2),
-        Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3),
-        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, mat4.clone()),
-        Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, mat4.clone()),
-        Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, mat4),
+    let mut list: Vec<Arc<Hitable<f32>>> = vec![
+        Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
+        Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
+        Arc::new(Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3)),
+        Arc::new(Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, mat4.clone())),
+        Arc::new(Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, mat4.clone())),
+        Arc::new(Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, mat4)),
     ];
-    let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
-    let world = HitableList(list.as_ref());
+    let world = BVH::initialize(list.as_mut_slice());
     let look_from = Point3D::new(-4.0, 0.7, 3.0);
     let look_at = Point3D::new(-1.0, 0.0, -1.0);
     let focus_dist = (look_from-look_at).length();
     let aperture = 0.1;
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
-    let cam = camera::Camera::new(look_from, look_at, up, 15.0, width as f32/height as f32, aperture, focus_dist);
+    let cam = camera::Camera::new(look_from, look_at, up, 70.0, width as f32/height as f32, aperture, focus_dist);
 
     let wl_low = 390.0;
     let wl_high = 700.0;

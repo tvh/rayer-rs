@@ -8,6 +8,7 @@ extern crate palette;
 extern crate rand;
 extern crate test;
 
+use std::sync::Arc;
 use clap::{Arg, App};
 use euclid::*;
 use palette::*;
@@ -84,17 +85,17 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let mat1 = Lambertian::new(Rgb::new(0.1, 0.2, 0.5));
-    let mat2 = Lambertian::new(Rgb::new(0.8, 0.8, 0.0));
-    let mat3 = Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0);
-    let mat4 = Dielectric::SF11;
+    let mat1 = Arc::new(Lambertian::new(Rgb::new(0.1, 0.2, 0.5)));
+    let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
+    let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
+    let mat4 = Arc::new(Dielectric::SF11);
     let spheres: Vec<Sphere<f32>> = vec![
-        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, &mat1),
-        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, &mat2),
-        Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, &mat3),
-        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, &mat4),
-        Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, &mat4),
-        Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, &mat4),
+        Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1),
+        Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2),
+        Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3),
+        Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, mat4.clone()),
+        Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, mat4.clone()),
+        Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, mat4),
     ];
     let list: Vec<&Hitable<f32>> = spheres.iter().map(|sphere| sphere as &Hitable<f32>).collect();
     let world = HitableList(list.as_ref());

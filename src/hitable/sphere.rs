@@ -2,16 +2,27 @@ use euclid::*;
 use ray::Ray;
 use types::*;
 use hitable::*;
+use std::sync::Arc;
+use std::borrow::Borrow;
 
-#[derive(PartialEq, Debug, Clone)]
-pub struct Sphere<'a, T: CoordinateBase + 'a> {
+#[derive(Debug, Clone)]
+pub struct Sphere<T: CoordinateBase> {
     center: Point3D<T>,
     radius: T,
-    material: &'a Material<T>,
+    material: Arc<Material<T>>,
 }
 
-impl<'a, T: CoordinateBase + 'a> Sphere<'a, T> {
-    pub fn new(center: Point3D<T>, radius: T, material: &'a Material<T>) -> Sphere<T> {
+// This should not be necessary.
+impl<T: CoordinateBase> PartialEq for Sphere<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.center == other.center &&
+            self.radius == other.radius &&
+            &self.material == &other.material
+    }
+}
+
+impl<T: CoordinateBase> Sphere<T> {
+    pub fn new(center: Point3D<T>, radius: T, material: Arc<Material<T>>) -> Sphere<T> {
         Sphere{
             center,
             radius,
@@ -20,7 +31,7 @@ impl<'a, T: CoordinateBase + 'a> Sphere<'a, T> {
     }
 }
 
-impl<'a, T: 'a + CoordinateBase> Hitable<T> for Sphere<'a, T> {
+impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         let oc = r.origin - self.center;
         let a = r.direction.dot(r.direction);
@@ -35,7 +46,7 @@ impl<'a, T: 'a + CoordinateBase> Hitable<T> for Sphere<'a, T> {
             if t < t_max && t > t_min {
                 let p = r.point_at_parameter(t);
                 let normal = (p-self.center) / self.radius;
-                return Some(HitRecord{normal, p, t, material: self.material});
+                return Some(HitRecord{normal, p, t, material: self.material.borrow()});
             }
         }
         None
@@ -50,8 +61,8 @@ mod tests {
     #[test]
     fn test_hit() {
         // TODO: Do more than this smoke test
-        let material = Lambertian::new(Rgb::new(0.5, 0.5, 0.5));
-        let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0, &material);
+        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+        let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(Point3D::new(-3.0, 0.0, 0.0), Vector3D::new(1.0, 0.0, 0.0), 500.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
@@ -60,7 +71,7 @@ mod tests {
                 let t = 2.0;
                 let p = Point3D::new(-1.0, 0.0, 0.0);
                 let normal = Vector3D::new(-1.0, 0.0, 0.0);
-                let expected = HitRecord{t, p, normal, material: &material};
+                let expected = HitRecord{t, p, normal, material: material.borrow()};
                 assert_eq!(expected, hit);
             }
         }

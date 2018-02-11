@@ -7,7 +7,7 @@ mod cie_1931;
 
 pub use self::cie_1931::xyz_from_wavelength;
 
-pub trait HasReflectance: Debug {
+pub trait HasReflectance: Debug + Send + Sync {
     fn reflect(&self, wl: f32) -> f32;
 }
 
@@ -156,7 +156,7 @@ mod rgb_base_colors {
 }
 
 impl<C> HasReflectance for C where
-    C: IntoColor<D65, f32> + Debug + Copy,
+    C: IntoColor<D65, f32> + Debug + Copy + Send + Sync,
 {
     fn reflect(&self, wl: f32) -> f32 {
         let color_rgb = self.into_rgb();

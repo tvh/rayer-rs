@@ -13,7 +13,7 @@ pub struct ScatterResult<T> {
     pub reflection: Option<(f32, Ray<T>)>,
 }
 
-pub trait Material<T: CoordinateBase>: Debug {
+pub trait Material<T: CoordinateBase>: Debug + Send + Sync {
     fn scatter(&self, r_in: Ray<T>, hit_record: HitRecord<T>) -> ScatterResult<T>;
 }
 

@@ -4,8 +4,8 @@ use std::fmt::Debug;
 
 use color::HasReflectance;
 
-pub trait BinData: Debug {
-    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]> + Debug;
+pub trait BinData: Debug + Send + Sync {
+    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]> + Debug + Send + Sync;
     const WL_0: f32;
     const BIN_WIDTH: f32;
 }

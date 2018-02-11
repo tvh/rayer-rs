@@ -68,6 +68,21 @@ fn reflectance<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> f32 {
     return res;
 }
 
+fn three_spheres() -> Vec<Arc<Hitable<f32>>> {
+    let mat1 = Arc::new(Lambertian::new(Rgb::new(0.1, 0.2, 0.5)));
+    let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
+    let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
+    let mat4 = Arc::new(Dielectric::SF11);
+    vec![
+        Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
+        Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
+        Arc::new(Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3)),
+        Arc::new(Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, mat4.clone())),
+        Arc::new(Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, mat4.clone())),
+        Arc::new(Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, mat4)),
+    ]
+}
+
 fn main() {
     let matches =
         App::new("Rayer")
@@ -86,18 +101,7 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let mat1 = Arc::new(Lambertian::new(Rgb::new(0.1, 0.2, 0.5)));
-    let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
-    let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
-    let mat4 = Arc::new(Dielectric::SF11);
-    let mut list: Vec<Arc<Hitable<f32>>> = vec![
-        Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
-        Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
-        Arc::new(Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3)),
-        Arc::new(Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, mat4.clone())),
-        Arc::new(Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, mat4.clone())),
-        Arc::new(Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, mat4)),
-    ];
+    let mut list = three_spheres();
     let world = BVH::initialize(list.as_mut_slice());
     let look_from = Point3D::new(-4.0, 0.7, 3.0);
     let look_at = Point3D::new(-1.0, 0.0, -1.0);

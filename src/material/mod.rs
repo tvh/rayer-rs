@@ -106,6 +106,16 @@ impl Dielectric {
             c2: 0.0623068142*1e6,
             c3: 155.23629*1e6,
         };
+
+    pub const SF66: Dielectric =
+        Dielectric{
+            b1: 2.0245976,
+            b2: 0.470187196,
+            b3: 2.59970433,
+            c1: 0.0147053225*1e6,
+            c2: 0.0692998276*1e6,
+            c3: 161.817601*1e6,
+        };
 }
 
 fn refract<T: CoordinateBase>(v: Vector3D<T>, n: Vector3D<T>, ni_over_nt: T) -> Option<Vector3D<T>> {

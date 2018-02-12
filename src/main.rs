@@ -72,7 +72,7 @@ fn three_spheres() -> Vec<Arc<Hitable<f32>>> {
     let mat1 = Arc::new(Lambertian::new(Rgb::new(0.1, 0.2, 0.5)));
     let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
     let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
-    let mat4 = Arc::new(Dielectric::SF11);
+    let mat4 = Arc::new(Dielectric::SF66);
     vec![
         Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
         Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
@@ -95,8 +95,8 @@ fn main() {
         .get_matches();
     let output = matches.value_of("output").unwrap();
 
-    let height = 600;
     let width = 800;
+    let height = 600;
     let num_samples = 100;
 
     let mut buffer = image::ImageBuffer::new(width, height);
@@ -114,8 +114,9 @@ fn main() {
     let wl_low = 390.0;
     let wl_high = 700.0;
     let wl_span = wl_high-wl_low;
-    for i in 0..width {
-        for j in 0..height {
+    for j in 0..height {
+        print!("Calculating row {}\n", j+1);
+        for i in 0..width {
             let mut col: Xyz<D65, f32> = Xyz::new(0.0, 0.0, 0.0);
             let mut wl = gen_range(wl_low, wl_high);
             for _ in 0..num_samples {

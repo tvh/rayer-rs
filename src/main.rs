@@ -117,7 +117,7 @@ fn many_spheres() -> Scene<f32> {
             let choose_mat: f32 = rand();
             let center = point3(a as f32+0.9*next_f32(), 0.2, b as f32+0.9*next_f32());
             if (center - vec3(4.0, 0.2, 0.0)).to_vector().length() > 0.9 {
-                if choose_mat < 0.8 { // difuse
+                if choose_mat < 0.7 { // difuse
                     let mat = Arc::new(Lambertian::new(
                         Rgb::new(
                             next_f32()*next_f32(),
@@ -126,7 +126,7 @@ fn many_spheres() -> Scene<f32> {
                         )
                     ));
                     objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
-                } else if choose_mat < 0.95 { //metal
+                } else if choose_mat < 0.85 { //metal
                     let color = Rgb::new(
                         0.5*(1.0+next_f32()),
                         0.5*(1.0+next_f32()),
@@ -143,7 +143,7 @@ fn many_spheres() -> Scene<f32> {
 
     let look_from = Point3D::new(8.0, 2.0, 2.0);
     let look_at = Point3D::new(4.0, 1.0, 1.0);
-    let aperture = 0.1;
+    let aperture = 0.05;
     let vfov = 40.0;
 
     Scene { objects, look_from, look_at, aperture, vfov }

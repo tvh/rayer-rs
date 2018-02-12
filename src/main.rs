@@ -107,14 +107,44 @@ fn many_spheres() -> Scene<f32> {
     let sphere1_mat = Arc::new(Metal::new(Rgb::new(0.7, 0.6, 0.5), 0.0));
     let mut objects: Vec<Arc<Hitable<f32>>> = vec![
         Arc::new(Sphere::new(point3(0.0, -1000.0, -1.0), 1000.0, ground)),
-        Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass)),
+        Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass.clone())),
         Arc::new(Sphere::new(point3(-4.0, 1.0, 0.0), 1.0, sphere0_mat)),
         Arc::new(Sphere::new(point3(4.0, 1.0, 0.0), 1.0, sphere1_mat)),
     ];
-    let look_from = Point3D::new(8.0, 1.5, 3.0);
-    let look_at = Point3D::new(0.0, 0.0, 0.0);
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat: f32 = rand();
+            let center = point3(a as f32+0.9*next_f32(), 0.2, b as f32+0.9*next_f32());
+            if (center - vec3(4.0, 0.2, 0.0)).to_vector().length() > 0.9 {
+                if choose_mat < 0.8 { // difuse
+                    let mat = Arc::new(Lambertian::new(
+                        Rgb::new(
+                            next_f32()*next_f32(),
+                            next_f32()*next_f32(),
+                            next_f32()*next_f32(),
+                        )
+                    ));
+                    objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
+                } else if choose_mat < 0.95 { //metal
+                    let color = Rgb::new(
+                        0.5*(1.0+next_f32()),
+                        0.5*(1.0+next_f32()),
+                        0.5*(1.0+next_f32()),
+                    );
+                    let mat = Arc::new(Metal::new(color, 0.5*next_f32()));
+                    objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
+                } else {
+                    objects.push(Arc::new(Sphere::new(center, 0.2, glass.clone())));
+                }
+            }
+        }
+    }
+
+    let look_from = Point3D::new(8.0, 2.0, 2.0);
+    let look_at = Point3D::new(4.0, 1.0, 1.0);
     let aperture = 0.1;
-    let vfov = 60.0;
+    let vfov = 40.0;
 
     Scene { objects, look_from, look_at, aperture, vfov }
 }

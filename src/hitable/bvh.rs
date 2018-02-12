@@ -100,3 +100,45 @@ impl<T: CoordinateBase> Hitable<T> for BVH<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::*;
+    use palette::*;
+    use random::*;
+    use num_traits::Float;
+    use hitable::sphere::*;
+
+    #[bench]
+    fn bench_build_bvh_10000(bench: &mut Bencher) {
+        let n = 100000;
+        let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
+        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+        for _ in 0..10000 {
+            let center = rand_in_unit_sphere().to_point();
+            let tmp: f32 = rand();
+            let radius = tmp/10.0/f32::cbrt(n as f32);
+            let sphere = Sphere::new(center, radius, material.clone());
+            hitables.push(Arc::new(sphere));
+        }
+        bench.iter(|| BVH::initialize(hitables.as_slice()) );
+    }
+
+    #[bench]
+    fn bench_intersect_bvh_10000(bench: &mut Bencher) {
+        let n = 100000;
+        let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
+        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+        for _ in 0..10000 {
+            let center = rand_in_unit_sphere().to_point();
+            let tmp: f32 = rand();
+            let radius = tmp/10.0/f32::cbrt(n as f32);
+            let sphere = Sphere::new(center, radius, material.clone());
+            hitables.push(Arc::new(sphere));
+        }
+        let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0));
+        let bvh = BVH::initialize(hitables.as_slice());
+        bench.iter(|| bvh.hit(ray, f32::epsilon(), f32::max_value()) );
+    }
+}

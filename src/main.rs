@@ -9,6 +9,7 @@ extern crate palette;
 extern crate rand;
 extern crate test;
 
+use std::path::Path;
 use std::sync::Arc;
 use clap::{Arg, App};
 use euclid::*;
@@ -93,7 +94,14 @@ fn main() {
              .required(true)
              .takes_value(true))
         .get_matches();
-    let output = matches.value_of("output").unwrap();
+    let output = Path::new(matches.value_of("output").unwrap());
+    let format = match output.extension().map(|ext| ext.to_str().unwrap()) {
+        None => panic!("Cannot know format without extension"),
+        Some("png") => image::PNG,
+        Some("jpg") => image::JPEG,
+        Some("jpeg") => image::JPEG,
+        Some(ext) => panic!("Unknown extension: {:?}", ext),
+    };
 
     let width = 800;
     let height = 600;
@@ -143,5 +151,5 @@ fn main() {
 
     let ref mut fout = File::create(output).unwrap();
 
-    image::ImageRgb8(buffer).save(fout, image::PNG).unwrap();
+    image::ImageRgb8(buffer).save(fout, format).unwrap();
 }

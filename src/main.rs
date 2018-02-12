@@ -70,19 +70,53 @@ fn reflectance<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> f32 {
     return res;
 }
 
-fn three_spheres() -> Vec<Arc<Hitable<f32>>> {
+pub struct Scene<T> {
+    objects: Vec<Arc<Hitable<f32>>>,
+    look_from: Point3D<T>,
+    look_at: Point3D<T>,
+    aperture: T,
+    vfov: T,
+}
+
+fn three_spheres() -> Scene<f32> {
     let mat1 = Arc::new(Lambertian::new(Rgb::new(0.1, 0.2, 0.5)));
     let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
     let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF66);
-    vec![
+    let objects: Vec<Arc<Hitable<f32>>> = vec![
         Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
         Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
         Arc::new(Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3)),
         Arc::new(Sphere::new(Point3D::new(-1.0, 0.0, -1.0), 0.5, mat4.clone())),
         Arc::new(Sphere::new(Point3D::new(-1.25, 0.0, -1.0), -0.20, mat4.clone())),
         Arc::new(Sphere::new(Point3D::new(-0.75, 0.0, -1.0), -0.20, mat4)),
-    ]
+    ];
+
+    let look_from = Point3D::new(-4.0, 0.7, 3.0);
+    let look_at = Point3D::new(-1.0, 0.0, -1.0);
+    let aperture = 0.1;
+    let vfov = 15.0;
+
+    Scene { objects, look_from, look_at, aperture, vfov }
+}
+
+fn many_spheres() -> Scene<f32> {
+    let glass = Arc::new(Dielectric::SF66);
+    let ground = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+    let sphere0_mat = Arc::new(Lambertian::new(Rgb::new(0.4, 0.2, 0.1)));
+    let sphere1_mat = Arc::new(Metal::new(Rgb::new(0.7, 0.6, 0.5), 0.0));
+    let mut objects: Vec<Arc<Hitable<f32>>> = vec![
+        Arc::new(Sphere::new(point3(0.0, -1000.0, -1.0), 1000.0, ground)),
+        Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass)),
+        Arc::new(Sphere::new(point3(-4.0, 1.0, 0.0), 1.0, sphere0_mat)),
+        Arc::new(Sphere::new(point3(4.0, 1.0, 0.0), 1.0, sphere1_mat)),
+    ];
+    let look_from = Point3D::new(8.0, 1.5, 3.0);
+    let look_at = Point3D::new(0.0, 0.0, 0.0);
+    let aperture = 0.1;
+    let vfov = 60.0;
+
+    Scene { objects, look_from, look_at, aperture, vfov }
 }
 
 fn main() {
@@ -110,15 +144,12 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let mut list = three_spheres();
-    let world = BVH::initialize(list.as_mut_slice());
-    let look_from = Point3D::new(-4.0, 0.7, 3.0);
-    let look_at = Point3D::new(-1.0, 0.0, -1.0);
+    let Scene{ mut objects, look_from, look_at, aperture, vfov } = many_spheres();
+    let world = BVH::initialize(objects.as_mut_slice());
     let focus_dist = (look_from-look_at).length();
-    let aperture = 0.1;
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
-    let cam = camera::Camera::new(look_from, look_at, up, 15.0, width as f32/height as f32, aperture, focus_dist);
+    let cam = camera::Camera::new(look_from, look_at, up, vfov, width as f32/height as f32, aperture, focus_dist);
 
     let wl_low = 390.0;
     let wl_high = 700.0;

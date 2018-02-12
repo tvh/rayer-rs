@@ -21,7 +21,7 @@ impl<T: CoordinateBase> BVH<T> {
         enum Axis {
             X, Y, Z
         }
-        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>], direction: Axis) -> BVH<T> {
+        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>]) -> BVH<T> {
             match items.len() {
                 0 => { return BVH::Empty },
                 1 => {
@@ -34,6 +34,32 @@ impl<T: CoordinateBase> BVH<T> {
                 },
                 _ => {}
             }
+            // Find the "longest" axis
+            let mut min_x = T::max_value();
+            let mut min_y = T::max_value();
+            let mut min_z = T::max_value();
+            let mut max_x = T::min_value();
+            let mut max_y = T::min_value();
+            let mut max_z = T::min_value();
+            for item in items.iter() {
+                let centroid = item.centroid();
+                min_x = T::min(min_x, centroid.x);
+                min_y = T::min(min_y, centroid.y);
+                min_z = T::min(min_z, centroid.z);
+                max_x = T::max(max_x, centroid.x);
+                max_y = T::max(max_y, centroid.y);
+                max_z = T::max(max_z, centroid.z);
+            }
+            let width_x = max_x-min_x;
+            let width_y = max_y-min_y;
+            let width_z = max_z-min_z;
+            let mut direction = Axis::X;
+            if width_y>width_x {
+                direction = Axis::Y;
+            }
+            if width_z>T::max(width_x, width_y) {
+                direction = Axis::Z;
+            }
             match direction {
                 Axis::X => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().x)),
                 Axis::Y => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().y)),
@@ -41,18 +67,13 @@ impl<T: CoordinateBase> BVH<T> {
             };
             let split_location = items.len()/2;
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
-            let direction = match direction {
-                Axis::X => Axis::Y,
-                Axis::Y => Axis::Z,
-                Axis::Z => Axis::X
-            };
-            let left = go(&mut left_items, direction);
-            let right = go(&mut right_items, direction);
+            let left = go(&mut left_items);
+            let right = go(&mut right_items);
             let bbox = left.bbox().merge(right.bbox());
             BVH::Bin{ left: Arc::new(left), right: Arc::new(right), bbox }
         }
         let mut items: Vec<_> = items.iter().map(|x|x.clone()).collect();
-        go(items.as_mut_slice(), Axis::X)
+        go(items.as_mut_slice())
     }
 }
 

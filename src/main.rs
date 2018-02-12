@@ -6,6 +6,7 @@ extern crate euclid;
 extern crate image;
 extern crate num_traits;
 extern crate palette;
+extern crate pdqselect;
 extern crate rand;
 extern crate test;
 

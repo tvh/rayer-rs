@@ -1,4 +1,5 @@
 use hitable::*;
+use pdqselect::select_by;
 use std::sync::Arc;
 use decorum::Ordered;
 
@@ -60,12 +61,21 @@ impl<T: CoordinateBase> BVH<T> {
             if width_z>T::max(width_x, width_y) {
                 direction = Axis::Z;
             }
-            match direction {
-                Axis::X => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().x)),
-                Axis::Y => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().y)),
-                Axis::Z => items.sort_unstable_by_key(| p | Ordered::from_inner(p.centroid().z))
-            };
             let split_location = items.len()/2;
+            match direction {
+                Axis::X => select_by(
+                    items, split_location,
+                    | a, b | Ordered::from_inner(a.centroid().x).cmp(&Ordered::from_inner(b.centroid().x))
+                ),
+                Axis::Y => select_by(
+                    items, split_location,
+                    | a, b | Ordered::from_inner(a.centroid().y).cmp(&Ordered::from_inner(b.centroid().y))
+                ),
+                Axis::Z => select_by(
+                    items, split_location,
+                    | a, b | Ordered::from_inner(a.centroid().z).cmp(&Ordered::from_inner(b.centroid().z))
+                ),
+            };
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
             let left = go(&mut left_items);
             let right = go(&mut right_items);

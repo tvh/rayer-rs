@@ -159,6 +159,7 @@ mod tests {
     use random::*;
     use num_traits::Float;
     use hitable::sphere::*;
+    use pdqselect::select;
 
     fn bench_build(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
@@ -210,5 +211,25 @@ mod tests {
     fn bench_intersect_bvh_1000000(bench: &mut Bencher) {
         let n = 1000000;
         bench_intersect_bvh(bench, n)
+    }
+
+    #[test]
+    fn test_select() {
+        let n = 1000;
+        let split_location = n/2;
+        for _ in 0..100 {
+            let mut x: Vec<u64> = Vec::with_capacity(n);
+            for _ in 0..n {
+                x.push(rand());
+            }
+            select(&mut x, split_location);
+            let pivot = x[split_location];
+            for &i in &x[0..split_location] {
+                assert!(i<=pivot);
+            }
+            for &i in &x[split_location..] {
+                assert!(i>=pivot);
+            }
+        }
     }
 }

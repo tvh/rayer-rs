@@ -74,6 +74,7 @@ pub struct Scene<T> {
     objects: Vec<Arc<Hitable<f32>>>,
     look_from: Point3D<T>,
     look_at: Point3D<T>,
+    focus_dist: T,
     aperture: T,
     vfov: T,
 }
@@ -96,8 +97,9 @@ fn three_spheres() -> Scene<f32> {
     let look_at = Point3D::new(-1.0, 0.0, -1.0);
     let aperture = 0.1;
     let vfov = 15.0;
+    let focus_dist = (look_from-look_at).length();
 
-    Scene { objects, look_from, look_at, aperture, vfov }
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
 fn many_spheres() -> Scene<f32> {
@@ -141,12 +143,13 @@ fn many_spheres() -> Scene<f32> {
         }
     }
 
-    let look_from = Point3D::new(8.0, 2.0, 2.0);
-    let look_at = Point3D::new(4.0, 1.0, 1.0);
-    let aperture = 0.05;
-    let vfov = 40.0;
+    let look_from = Point3D::new(13.0, 2.0, 3.0);
+    let look_at = Point3D::new(0.0, 0.0, 0.0);
+    let aperture = 0.1;
+    let vfov = 20.0;
+    let focus_dist = 10.0;
 
-    Scene { objects, look_from, look_at, aperture, vfov }
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
 fn main() {
@@ -174,9 +177,8 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let Scene{ mut objects, look_from, look_at, aperture, vfov } = many_spheres();
+    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = many_spheres();
     let world = BVH::initialize(objects.as_mut_slice());
-    let focus_dist = (look_from-look_at).length();
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
     let cam = camera::Camera::new(look_from, look_at, up, vfov, width as f32/height as f32, aperture, focus_dist);

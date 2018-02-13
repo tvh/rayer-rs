@@ -3,6 +3,9 @@ name = "rayer"
 version = "0.1.0"
 authors = ["Timo von Holtz <tvh@tvholtz.de>"]
 
+[profile.release]
+debug = true
+
 [dependencies]
 pdqselect = "0.1.0"
 decorum = "0.0.8"

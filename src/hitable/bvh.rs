@@ -25,11 +25,11 @@ impl<T: CoordinateBase> BVH<T> {
         enum Axis {
             X, Y, Z
         }
-        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>], res: &mut Vec<Node<T>>) -> (AABB<T>, usize) {
+        fn go<T: CoordinateBase>(items: &mut [(Point3D<T>, Arc<Hitable<T>>)], res: &mut Vec<Node<T>>) -> (AABB<T>, usize) {
             match items {
                 &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
-                    let item = item.clone();
+                    let item = item.1.clone();
                     let bbox = item.bbox();
                     res.push(Node::Tip {
                         hitable: item,
@@ -46,8 +46,7 @@ impl<T: CoordinateBase> BVH<T> {
             let mut max_x = T::min_value();
             let mut max_y = T::min_value();
             let mut max_z = T::min_value();
-            for item in items.iter() {
-                let centroid = item.centroid();
+            for &(centroid, _) in items.iter() {
                 min_x = T::min(min_x, centroid.x);
                 min_y = T::min(min_y, centroid.y);
                 min_z = T::min(min_z, centroid.z);
@@ -69,15 +68,15 @@ impl<T: CoordinateBase> BVH<T> {
             match direction {
                 Axis::X => select_by(
                     items, split_location,
-                    | a, b | Ordered::from_inner(a.centroid().x).cmp(&Ordered::from_inner(b.centroid().x))
+                    | a, b | Ordered::from_inner(a.0.x).cmp(&Ordered::from_inner(b.0.x))
                 ),
                 Axis::Y => select_by(
                     items, split_location,
-                    | a, b | Ordered::from_inner(a.centroid().y).cmp(&Ordered::from_inner(b.centroid().y))
+                    | a, b | Ordered::from_inner(a.0.y).cmp(&Ordered::from_inner(b.0.y))
                 ),
                 Axis::Z => select_by(
                     items, split_location,
-                    | a, b | Ordered::from_inner(a.centroid().z).cmp(&Ordered::from_inner(b.centroid().z))
+                    | a, b | Ordered::from_inner(a.0.z).cmp(&Ordered::from_inner(b.0.z))
                 ),
             };
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
@@ -90,7 +89,7 @@ impl<T: CoordinateBase> BVH<T> {
             res[current_pos] = Node::Bin{ left_length, bbox };
             (bbox, 1+left_length+right_length)
         }
-        let mut items: Vec<_> = items.iter().map(|x|x.clone()).collect();
+        let mut items: Vec<_> = items.iter().map(|x| (x.centroid(), x.clone()) ).collect();
         let mut nodes = Vec::with_capacity(items.len()*2-1);
         go(items.as_mut_slice(), &mut nodes);
         BVH { nodes }

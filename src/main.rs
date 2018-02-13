@@ -36,12 +36,12 @@ use material::*;
 use random::*;
 use types::*;
 
-fn color<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> Xyz<D65, f32> {
+fn color<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> Xyz<D65, f32> {
     let refl = reflectance(r, world);
     color::xyz_from_wavelength(r.wl) * refl
 }
 
-fn reflectance<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> f32 {
+fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f32 {
     let mut r = r;
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;

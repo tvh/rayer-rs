@@ -3,17 +3,20 @@ use pdqselect::select_by;
 use std::sync::Arc;
 use decorum::Ordered;
 
-pub enum BVH<T: CoordinateBase> {
-    Empty,
+pub struct BVH<T: CoordinateBase> {
+    nodes: Vec<Node<T>>
+}
+
+enum Node<T: CoordinateBase> {
     Bin {
-        left: Arc<BVH<T>>,
-        right: Arc<BVH<T>>,
+        left_length: usize,
         bbox: BoundingBox<T>,
     },
     Tip {
         hitable: Arc<Hitable<T>>,
         bbox: BoundingBox<T>,
-    }
+    },
+    Placeholder,
 }
 
 impl<T: CoordinateBase> BVH<T> {
@@ -22,16 +25,17 @@ impl<T: CoordinateBase> BVH<T> {
         enum Axis {
             X, Y, Z
         }
-        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>]) -> BVH<T> {
-            match items.len() {
-                0 => { return BVH::Empty },
-                1 => {
-                    let item = items[0].clone();
+        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>], res: &mut Vec<Node<T>>) -> (BoundingBox<T>, usize) {
+            match items {
+                &mut [] => { return (BoundingBox::empty(), 0); },
+                &mut [ref item] => {
+                    let item = item.clone();
                     let bbox = item.bbox();
-                    return BVH::Tip {
+                    res.push(Node::Tip {
                         hitable: item,
                         bbox: bbox
-                    }
+                    });
+                    return (bbox, 1);
                 },
                 _ => {}
             }
@@ -77,58 +81,73 @@ impl<T: CoordinateBase> BVH<T> {
                 ),
             };
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
-            let left = go(&mut left_items);
-            let right = go(&mut right_items);
-            let bbox = left.bbox().merge(right.bbox());
-            BVH::Bin{ left: Arc::new(left), right: Arc::new(right), bbox }
+            let current_pos = res.len();
+            res.push(Node::Placeholder);
+            let (left_bbox, left_length) = go(&mut left_items, res);
+            let (right_bbox, right_length) = go(&mut right_items, res);
+            let bbox = left_bbox.merge(right_bbox);
+            res[current_pos] = Node::Bin{ left_length, bbox };
+            (bbox, 1+left_length+right_length)
         }
         let mut items: Vec<_> = items.iter().map(|x|x.clone()).collect();
-        go(items.as_mut_slice())
+        let mut nodes = Vec::with_capacity(items.len()*2-1);
+        go(items.as_mut_slice(), &mut nodes);
+        BVH { nodes }
     }
 }
 
 impl<T: CoordinateBase> Hitable<T> for BVH<T> {
     fn bbox(&self) -> BoundingBox<T> {
-        match self {
-            &BVH::Empty => BoundingBox::<T>::empty(),
-            &BVH::Bin { bbox, .. } => bbox,
-            &BVH::Tip { bbox, .. } => bbox
+        let &BVH { ref nodes } = self;
+        match nodes.as_slice() {
+            &[] => BoundingBox::empty(),
+            &[Node::Tip {bbox, ..}, ..] => bbox,
+            &[Node::Bin {bbox, ..}, ..] => bbox,
+            &[Node::Placeholder, ..] => panic!("Found placeholder in BVH"),
         }
     }
 
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
-        match self {
-            &BVH::Empty => None,
-            &BVH::Tip { ref hitable, bbox } => {
-                if bbox.intersects(r, t_min, t_max) {
-                    hitable.hit(r, t_min, t_max)
-                } else {
-                    None
-                }
-            },
-            &BVH::Bin { ref left, ref right, bbox } => {
-                if !bbox.intersects(r, t_min, t_max) {
-                    return None;
-                }
-                let mut closest_match = None;
-                let mut closest_so_far = t_max;
+        let &BVH { ref nodes } = self;
+        fn go<T: CoordinateBase>(nodes: &[Node<T>], r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
+            match nodes {
+                &[] => None,
+                &[Node::Bin {bbox, left_length}, ref rest..] => {
+                    if !bbox.intersects(r, t_min, t_max) {
+                        return None;
+                    }
+                    let mut closest_match = None;
+                    let mut closest_so_far = t_max;
 
-                match left.hit(r, t_min, closest_so_far) {
-                    None => (),
-                    Some(hit) => {
-                        closest_match = Some(hit);
-                        closest_so_far = hit.t;
+                    match go(rest, r, t_min, closest_so_far) {
+                        None => (),
+                        Some(hit) => {
+                            closest_match = Some(hit);
+                            closest_so_far = hit.t;
+                        }
                     }
-                }
-                match right.hit(r, t_min, closest_so_far) {
-                    None => (),
-                    Some(hit) => {
-                        closest_match = Some(hit);
+                    let right = &rest[left_length..];
+                    match go(right, r, t_min, closest_so_far) {
+                        None => (),
+                        Some(hit) => {
+                            closest_match = Some(hit);
+                            closest_so_far = hit.t;
+                        }
                     }
-                }
-                closest_match
+
+                    closest_match
+                },
+                &[Node::Tip {bbox, ref hitable}, ..] => {
+                    if bbox.intersects(r, t_min, t_max) {
+                        hitable.hit(r, t_min, t_max)
+                    } else {
+                        None
+                    }
+                },
+                &[Node::Placeholder, ..] => None,
             }
         }
+        go(nodes.as_slice(), r, t_min, t_max)
     }
 }
 

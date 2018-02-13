@@ -1,5 +1,6 @@
 #![feature(test)]
 #![feature(const_fn)]
+#![feature(slice_patterns)]
 extern crate clap;
 extern crate decorum;
 extern crate euclid;

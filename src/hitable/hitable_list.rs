@@ -5,8 +5,8 @@ use types::*;
 pub struct HitableList<'a, T: 'a>(pub &'a[&'a Hitable<T>]);
 
 impl<'a, T: CoordinateBase> Hitable<T> for HitableList<'a, T> {
-    fn bbox(&self) -> BoundingBox<T> {
-        let mut bbox = BoundingBox::<T>::empty();
+    fn bbox(&self) -> AABB<T> {
+        let mut bbox = AABB::<T>::empty();
 
         for obj in self.0.iter() {
             bbox = bbox.merge(obj.bbox());

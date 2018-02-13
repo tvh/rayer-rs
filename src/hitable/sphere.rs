@@ -35,10 +35,10 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
     fn centroid(&self) -> Point3D<T> {
         self.center
     }
-    fn bbox(&self) -> BoundingBox<T> {
+    fn bbox(&self) -> AABB<T> {
         let abs_radius = self.radius.abs();
         let diff = vec3(abs_radius, abs_radius, abs_radius);
-        BoundingBox {
+        AABB {
             low: self.center-diff,
             high: self.center+diff,
         }

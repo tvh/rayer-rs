@@ -10,13 +10,13 @@ pub struct BVH<T: CoordinateBase> {
 enum Node<T: CoordinateBase> {
     Bin {
         left_length: usize,
-        bbox: BoundingBox<T>,
+        bbox: AABB<T>,
     },
     Tip {
         hitable: Arc<Hitable<T>>,
-        bbox: BoundingBox<T>,
+        bbox: AABB<T>,
     },
-    Placeholder,
+    Empty,
 }
 
 impl<T: CoordinateBase> BVH<T> {
@@ -25,9 +25,9 @@ impl<T: CoordinateBase> BVH<T> {
         enum Axis {
             X, Y, Z
         }
-        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>], res: &mut Vec<Node<T>>) -> (BoundingBox<T>, usize) {
+        fn go<T: CoordinateBase>(items: &mut [Arc<Hitable<T>>], res: &mut Vec<Node<T>>) -> (AABB<T>, usize) {
             match items {
-                &mut [] => { return (BoundingBox::empty(), 0); },
+                &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
                     let item = item.clone();
                     let bbox = item.bbox();
@@ -81,8 +81,9 @@ impl<T: CoordinateBase> BVH<T> {
                 ),
             };
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
+            // Just put a placeholder in to not break the vector
             let current_pos = res.len();
-            res.push(Node::Placeholder);
+            res.push(Node::Empty);
             let (left_bbox, left_length) = go(&mut left_items, res);
             let (right_bbox, right_length) = go(&mut right_items, res);
             let bbox = left_bbox.merge(right_bbox);
@@ -97,13 +98,13 @@ impl<T: CoordinateBase> BVH<T> {
 }
 
 impl<T: CoordinateBase> Hitable<T> for BVH<T> {
-    fn bbox(&self) -> BoundingBox<T> {
+    fn bbox(&self) -> AABB<T> {
         let &BVH { ref nodes } = self;
         match nodes.as_slice() {
-            &[] => BoundingBox::empty(),
+            &[] => AABB::empty(),
             &[Node::Tip {bbox, ..}, ..] => bbox,
             &[Node::Bin {bbox, ..}, ..] => bbox,
-            &[Node::Placeholder, ..] => panic!("Found placeholder in BVH"),
+            &[Node::Empty, ..] => AABB::empty(),
         }
     }
 
@@ -144,7 +145,7 @@ impl<T: CoordinateBase> Hitable<T> for BVH<T> {
                         None
                     }
                 },
-                &[Node::Placeholder, ..] => None,
+                &[Node::Empty, ..] => None,
             }
         }
         go(nodes.as_slice(), r, t_min, t_max)

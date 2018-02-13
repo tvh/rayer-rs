@@ -141,12 +141,10 @@ mod tests {
     use num_traits::Float;
     use hitable::sphere::*;
 
-    #[bench]
-    fn bench_build_bvh_10000(bench: &mut Bencher) {
-        let n = 100000;
+    fn bench_build(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
         let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
-        for _ in 0..10000 {
+        for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
             let radius = tmp/10.0/f32::cbrt(n as f32);
@@ -157,11 +155,15 @@ mod tests {
     }
 
     #[bench]
-    fn bench_intersect_bvh_10000(bench: &mut Bencher) {
-        let n = 100000;
+    fn bench_build_bvh_10000(bench: &mut Bencher) {
+        let n = 10000;
+        bench_build(bench, n);
+    }
+
+    fn bench_intersect_bvh(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
         let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
-        for _ in 0..10000 {
+        for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
             let radius = tmp/10.0/f32::cbrt(n as f32);
@@ -171,5 +173,23 @@ mod tests {
         let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0));
         let bvh = BVH::initialize(hitables.as_slice());
         bench.iter(|| bvh.hit(ray, f32::epsilon(), f32::max_value()) );
+    }
+
+    #[bench]
+    fn bench_intersect_bvh_10000(bench: &mut Bencher) {
+        let n = 10000;
+        bench_intersect_bvh(bench, n)
+    }
+
+    #[bench]
+    fn bench_intersect_bvh_100000(bench: &mut Bencher) {
+        let n = 100000;
+        bench_intersect_bvh(bench, n)
+    }
+
+    #[bench]
+    fn bench_intersect_bvh_1000000(bench: &mut Bencher) {
+        let n = 1000000;
+        bench_intersect_bvh(bench, n)
     }
 }

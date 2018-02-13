@@ -44,7 +44,7 @@ fn reflectance<T: CoordinateBase>(r: ray::Ray<T>, world: &Hitable<T>) -> f32 {
     let mut r = r;
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;
-    for _ in 0..20 {
+    for _ in 0..50 {
         let rec = world.hit(r, T::sqrt(T::epsilon()), T::max_value());
         match rec {
             Some(rec) => {

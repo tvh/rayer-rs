@@ -7,6 +7,7 @@ authors = ["Timo von Holtz <tvh@tvholtz.de>"]
 debug = true
 
 [dependencies]
+cpuprofiler = "0.0.3"
 pdqselect = "0.1.0"
 decorum = "0.0.8"
 euclid = "0.16.4"

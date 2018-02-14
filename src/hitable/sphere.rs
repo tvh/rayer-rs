@@ -39,8 +39,7 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
         let abs_radius = self.radius.abs();
         let diff = vec3(abs_radius, abs_radius, abs_radius);
         AABB {
-            low: self.center-diff,
-            high: self.center+diff,
+            bounds: [self.center-diff, self.center+diff]
         }
     }
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {

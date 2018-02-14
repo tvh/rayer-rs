@@ -43,7 +43,7 @@ impl<T: CoordinateBase> Hitable<T> for Triangle<T> {
                 T::max(high.z, obj.z),
             );
         }
-        AABB { low, high }
+        AABB { bounds: [low, high] }
     }
     fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
         // find vectors for two edges sharing vert0

@@ -9,6 +9,7 @@ pub struct Ray<T> {
     pub direction: Vector3D<T>,
     pub wl: f32,
     pub inv_direction: TypedVector3D<T, Inverted>,
+    pub sign: TypedVector3D<bool, Inverted>,
 }
 
 impl<T> Ray<T>
@@ -18,7 +19,9 @@ where
     pub fn new(origin: Point3D<T>, direction: Vector3D<T>, wl: f32) -> Ray<T> {
         let inv_direction =
             vec3(direction.x.recip(), direction.y.recip(), direction.z.recip());
-        Ray{origin, direction, wl, inv_direction}
+        let sign =
+            vec3(direction.x < T::zero(), direction.y < T::zero(), direction.z < T::zero());
+        Ray{origin, direction, wl, inv_direction, sign}
     }
 
     pub fn point_at_parameter(self, t: T) -> Point3D<T> {

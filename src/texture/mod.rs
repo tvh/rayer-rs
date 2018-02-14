@@ -23,7 +23,7 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    fn new(image: &Arc<RgbImage>) -> ImageTexture {
+    pub fn new(image: &Arc<RgbImage>) -> ImageTexture {
         ImageTexture { image: image.clone() }
     }
 }

@@ -82,6 +82,23 @@ pub struct Scene<T> {
     vfov: T,
 }
 
+fn just_earth() -> Scene<f32> {
+    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
+    let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
+    let material = Arc::new(Lambertian::new(&texture));
+    let objects: Vec<Arc<Hitable<f32>>> = vec![
+        Arc::new(Sphere::new(point3(0.0, 0.0, 0.0), 1.0, material)),
+    ];
+
+    let look_from = Point3D::new(3.0, -1.0, -1.5);
+    let look_at = Point3D::new(0.0, 0.0, 0.0);
+    let aperture = 0.0;
+    let vfov = 35.0;
+    let focus_dist = (look_from-look_at).length();
+
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
+}
+
 fn three_spheres() -> Scene<f32> {
     let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.1, 0.2, 0.5));
     let mat1 = Arc::new(Lambertian::new(&color));
@@ -184,7 +201,7 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = many_spheres();
+    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = just_earth();
     let world = BVH::initialize(objects.as_mut_slice());
     let up = Vector3D::new(0.0, 1.0, 0.0);
 

@@ -61,7 +61,7 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
                 let theta = T::asin(normal.y);
                 let u = T::one() - (phi+T::PI()) / (T::PI()+T::PI());
                 let v = (theta + T::PI()*From::from(0.5)) / T::PI();
-                let uv = vec2(u, u);
+                let uv = vec2(u, v);
                 return Some(HitRecord{normal, p, t, uv, material: self.material.borrow()});
             }
         }
@@ -77,19 +77,44 @@ mod tests {
 
     #[test]
     fn test_hit() {
-        // TODO: Do more than this smoke test
         let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
         let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
-        let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0, material.clone());
-        let ray = Ray::new(Point3D::new(-3.0, 0.0, 0.0), Vector3D::new(1.0, 0.0, 0.0), 500.0);
+        let sphere = Sphere::new(point3(0.0, 0.0, 0.0), 1.0, material.clone());
+        let ray = Ray::new(point3(-2.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0);
+        let res = sphere.hit(ray, 0.0, 1000.0);
+        match res {
+            None => panic!("Expected a hit"),
+            Some(hit) => {
+                let t = 1.0;
+                let p = point3(-1.0, 0.0, 0.0);
+                let normal = vec3(-1.0, 0.0, 0.0);
+                let uv = vec2(0.0, 0.5);
+                let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
+                assert_eq!(expected, hit);
+            }
+        }
+        let ray = Ray::new(point3(1.5, 0.0, 0.0), vec3(-1.0, 0.0, 0.0), 500.0);
+        let res = sphere.hit(ray, 0.0, 1000.0);
+        match res {
+            None => panic!("Expected a hit"),
+            Some(hit) => {
+                let t = 0.5;
+                let p = point3(1.0, 0.0, 0.0);
+                let normal = vec3(1.0, 0.0, 0.0);
+                let uv = vec2(0.5, 0.5);
+                let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
+                assert_eq!(expected, hit);
+            }
+        }
+        let ray = Ray::new(point3(0.0, 3.0, 0.0), vec3(0.0, -1.0, 0.0), 500.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
             None => panic!("Expected a hit"),
             Some(hit) => {
                 let t = 2.0;
-                let p = Point3D::new(-1.0, 0.0, 0.0);
-                let normal = Vector3D::new(-1.0, 0.0, 0.0);
-                let uv = vec2(0.0, 0.0);
+                let p = point3(0.0, 1.0, 0.0);
+                let normal = vec3(0.0, 1.0, 0.0);
+                let uv = vec2(0.5, 1.0);
                 let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
                 assert_eq!(expected, hit);
             }

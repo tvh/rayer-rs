@@ -160,10 +160,12 @@ mod tests {
     use num_traits::Float;
     use hitable::sphere::*;
     use pdqselect::select;
+    use texture::*;
 
     fn bench_build(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
-        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+        let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
+        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
@@ -182,7 +184,8 @@ mod tests {
 
     fn bench_intersect_bvh(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
-        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+        let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
+        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();

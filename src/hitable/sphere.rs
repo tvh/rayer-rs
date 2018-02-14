@@ -57,7 +57,12 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
             if t < t_max && t > t_min {
                 let p = r.point_at_parameter(t);
                 let normal = (p-self.center) / self.radius;
-                return Some(HitRecord{normal, p, t, material: self.material.borrow()});
+                let phi = T::atan2(normal.z, normal.x);
+                let theta = T::asin(normal.y);
+                let u = T::one() - (phi+T::PI()) / (T::PI()+T::PI());
+                let v = (theta + T::PI()*From::from(0.5)) / T::PI();
+                let uv = vec2(u, u);
+                return Some(HitRecord{normal, p, t, uv, material: self.material.borrow()});
             }
         }
         None
@@ -68,11 +73,13 @@ impl<T: CoordinateBase> Hitable<T> for Sphere<T> {
 mod tests {
     use super::*;
     use palette::*;
+    use texture::*;
 
     #[test]
     fn test_hit() {
         // TODO: Do more than this smoke test
-        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
+        let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
+        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
         let sphere = Sphere::new(Point3D::new(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(Point3D::new(-3.0, 0.0, 0.0), Vector3D::new(1.0, 0.0, 0.0), 500.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
@@ -82,7 +89,8 @@ mod tests {
                 let t = 2.0;
                 let p = Point3D::new(-1.0, 0.0, 0.0);
                 let normal = Vector3D::new(-1.0, 0.0, 0.0);
-                let expected = HitRecord{t, p, normal, material: material.borrow()};
+                let uv = vec2(0.0, 0.0);
+                let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
                 assert_eq!(expected, hit);
             }
         }

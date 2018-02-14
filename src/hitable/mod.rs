@@ -13,6 +13,7 @@ use material::*;
 pub struct HitRecord<'a, T: 'a + CoordinateBase> {
     pub t: T,
     pub p: Point3D<T>,
+    pub uv: Vector2D<T>,
     pub normal: Vector3D<T>,
     pub material: &'a Material<T>,
 }

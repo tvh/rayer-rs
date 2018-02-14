@@ -20,6 +20,7 @@ use palette::pixel::Srgb;
 use palette::white_point::D65;
 use std::fs::File;
 
+mod texture;
 mod camera;
 mod color;
 mod hitable;
@@ -35,6 +36,7 @@ use hitable::sphere::*;
 use material::*;
 use random::*;
 use types::*;
+use texture::Texture;
 
 fn color<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> Xyz<D65, f32> {
     let refl = reflectance(r, world);
@@ -81,8 +83,10 @@ pub struct Scene<T> {
 }
 
 fn three_spheres() -> Scene<f32> {
-    let mat1 = Arc::new(Lambertian::new(Rgb::new(0.1, 0.2, 0.5)));
-    let mat2 = Arc::new(Lambertian::new(Rgb::new(0.8, 0.8, 0.0)));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.1, 0.2, 0.5));
+    let mat1 = Arc::new(Lambertian::new(&color));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.8, 0.8, 0.0));
+    let mat2 = Arc::new(Lambertian::new(&color));
     let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF66);
     let objects: Vec<Arc<Hitable<f32>>> = vec![
@@ -105,8 +109,10 @@ fn three_spheres() -> Scene<f32> {
 
 fn many_spheres() -> Scene<f32> {
     let glass = Arc::new(Dielectric::SF66);
-    let ground = Arc::new(Lambertian::new(Rgb::new(0.5, 0.5, 0.5)));
-    let sphere0_mat = Arc::new(Lambertian::new(Rgb::new(0.4, 0.2, 0.1)));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
+    let ground = Arc::new(Lambertian::new(&color));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.4, 0.2, 0.1));
+    let sphere0_mat = Arc::new(Lambertian::new(&color));
     let sphere1_mat = Arc::new(Metal::new(Rgb::new(0.7, 0.6, 0.5), 0.0));
     let mut objects: Vec<Arc<Hitable<f32>>> = vec![
         Arc::new(Sphere::new(point3(0.0, -1000.0, -1.0), 1000.0, ground)),
@@ -121,13 +127,13 @@ fn many_spheres() -> Scene<f32> {
             let center = point3(a as f32+0.9*next_f32(), 0.2, b as f32+0.9*next_f32());
             if (center - vec3(4.0, 0.2, 0.0)).to_vector().length() > 0.9 {
                 if choose_mat < 0.7 { // difuse
-                    let mat = Arc::new(Lambertian::new(
-                        Rgb::new(
+                    let color: Arc<Texture<f32>> =
+                        Arc::new(Rgb::new(
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
-                        )
-                    ));
+                        ));
+                    let mat = Arc::new(Lambertian::new(&color));
                     objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
                 } else if choose_mat < 0.85 { //metal
                     let color = Rgb::new(

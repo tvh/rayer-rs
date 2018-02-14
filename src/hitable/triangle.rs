@@ -11,6 +11,9 @@ pub struct Triangle<T: CoordinateBase> {
     normal0: Vector3D<T>,
     normal1: Vector3D<T>,
     normal2: Vector3D<T>,
+    uv0: Vector2D<T>,
+    uv1: Vector2D<T>,
+    uv2: Vector2D<T>,
     material: Arc<Material<T>>,
 }
 
@@ -69,6 +72,7 @@ impl<T: CoordinateBase> Hitable<T> for Triangle<T> {
         }
         let normal = (self.normal0*u + self.normal1*v + self.normal2*w).normalize();
         let p = r.point_at_parameter(t);
-        Some(HitRecord{p, t, normal, material: self.material.borrow()})
+        let uv = self.uv0*u + self.uv1*v + self.uv2*w;
+        Some(HitRecord{p, t, normal, material: self.material.borrow(), uv})
     }
 }

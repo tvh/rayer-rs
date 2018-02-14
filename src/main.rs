@@ -33,6 +33,7 @@ use color::HasReflectance;
 use hitable::Hitable;
 use hitable::bvh::*;
 use hitable::sphere::*;
+use hitable::triangle::*;
 use material::*;
 use random::*;
 use types::*;
@@ -127,12 +128,25 @@ fn three_spheres() -> Scene<f32> {
 fn many_spheres() -> Scene<f32> {
     let glass = Arc::new(Dielectric::SF66);
     let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
-    let ground = Arc::new(Lambertian::new(&color));
+    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
+    let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
+    let ground = Arc::new(Lambertian::new(&texture));
     let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.4, 0.2, 0.1));
     let sphere0_mat = Arc::new(Lambertian::new(&color));
     let sphere1_mat = Arc::new(Metal::new(Rgb::new(0.7, 0.6, 0.5), 0.0));
     let mut objects: Vec<Arc<Hitable<f32>>> = vec![
-        Arc::new(Sphere::new(point3(0.0, -1000.0, -1.0), 1000.0, ground)),
+        Arc::new(Triangle::new(
+            (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
+            (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            ground.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(-20.0, 0.0, -30.0), point3(20.0, 0.0, -30.0), point3(20.0, 0.0, 30.0)),
+            (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            ground,
+        )),
         Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass.clone())),
         Arc::new(Sphere::new(point3(-4.0, 1.0, 0.0), 1.0, sphere0_mat)),
         Arc::new(Sphere::new(point3(4.0, 1.0, 0.0), 1.0, sphere1_mat)),
@@ -167,10 +181,10 @@ fn many_spheres() -> Scene<f32> {
         }
     }
 
-    let look_from = Point3D::new(13.0, 2.0, 3.0);
-    let look_at = Point3D::new(0.0, 0.0, 0.0);
-    let aperture = 0.1;
-    let vfov = 20.0;
+    let look_from = Point3D::new(13.0, 7.0, 3.0);
+    let look_at = Point3D::new(0.0, -0.5, 0.0);
+    let aperture = 0.0;
+    let vfov = 30.0;
     let focus_dist = 10.0;
 
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
@@ -201,7 +215,7 @@ fn main() {
 
     let mut buffer = image::ImageBuffer::new(width, height);
 
-    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = just_earth();
+    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = many_spheres();
     let world = BVH::initialize(objects.as_mut_slice());
     let up = Vector3D::new(0.0, 1.0, 0.0);
 

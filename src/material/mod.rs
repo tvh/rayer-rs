@@ -89,6 +89,7 @@ pub struct Dielectric {
 }
 
 impl Dielectric {
+    #[allow(dead_code)]
     pub const BAF10: Dielectric =
         Dielectric{
             b1: 1.5851495,
@@ -99,6 +100,7 @@ impl Dielectric {
             c3: 105.613573*1e6,
         };
 
+    #[allow(dead_code)]
     pub const SF11: Dielectric =
         Dielectric{
             b1: 1.73759695,
@@ -109,6 +111,7 @@ impl Dielectric {
             c3: 155.23629*1e6,
         };
 
+    #[allow(dead_code)]
     pub const SF66: Dielectric =
         Dielectric{
             b1: 2.0245976,

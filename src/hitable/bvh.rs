@@ -131,7 +131,6 @@ impl<T: CoordinateBase> Hitable<T> for BVH<T> {
                         None => (),
                         Some(hit) => {
                             closest_match = Some(hit);
-                            closest_so_far = hit.t;
                         }
                     }
 

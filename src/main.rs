@@ -84,6 +84,7 @@ pub struct Scene<T> {
     vfov: T,
 }
 
+#[allow(dead_code)]
 fn just_earth() -> Scene<f32> {
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
     let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
@@ -101,6 +102,7 @@ fn just_earth() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
+#[allow(dead_code)]
 fn three_spheres() -> Scene<f32> {
     let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.1, 0.2, 0.5));
     let mat1 = Arc::new(Lambertian::new(&color));
@@ -126,9 +128,9 @@ fn three_spheres() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
+#[allow(dead_code)]
 fn many_spheres() -> Scene<f32> {
     let glass = Arc::new(Dielectric::SF66);
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
     let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
     let ground = Arc::new(Lambertian::new(&texture));

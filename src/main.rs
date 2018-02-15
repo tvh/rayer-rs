@@ -73,6 +73,7 @@ fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f
             None => {
                 let unit_direction = r.direction.normalize();
                 let t: f32 = (unit_direction.y.to_f32().unwrap() + 1.0)*0.5;
+                let t = t.min(1.0).max(0.0);
                 let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
                 res += rgb.reflect(r.wl)*attenuation_acc;
                 return res;

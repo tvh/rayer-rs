@@ -10,16 +10,18 @@ extern crate num_traits;
 extern crate palette;
 extern crate pdqselect;
 extern crate rand;
+extern crate rayon;
 extern crate test;
 
-use std::path::Path;
-use std::sync::Arc;
 use clap::{Arg, App};
 use euclid::*;
 use palette::*;
 use palette::pixel::Srgb;
 use palette::white_point::D65;
+use rayon::prelude::*;
 use std::fs::File;
+use std::path::Path;
+use std::sync::Arc;
 
 mod texture;
 mod camera;
@@ -216,8 +218,6 @@ fn main() {
     let height = 600;
     let num_samples = 100;
 
-    let mut buffer = image::ImageBuffer::new(width, height);
-
     let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = many_spheres();
     let world = BVH::initialize(objects.as_mut_slice());
     let up = Vector3D::new(0.0, 1.0, 0.0);
@@ -227,9 +227,11 @@ fn main() {
     let wl_low = 390.0;
     let wl_high = 700.0;
     let wl_span = wl_high-wl_low;
-    for j in 0..height {
-        print!("Calculating row {}\n", j+1);
-        for i in 0..width {
+    let buffer: Vec<_> =
+        (0..height*width).into_par_iter()
+        .map(|n| {
+            let i = n%width;
+            let j = height-(n/width);
             let mut col: Xyz<D65, f32> = Xyz::new(0.0, 0.0, 0.0);
             let mut wl = gen_range(wl_low, wl_high);
             for _ in 0..num_samples {
@@ -250,11 +252,11 @@ fn main() {
                 ,(col.green*255.99) as u8
                 ,(col.blue*255.9) as u8
                 ];
-            buffer[(i,height-j-1)] = image::Rgb(pixel);
-        }
-    }
+            image::Rgb(pixel)
+        }).collect();
 
     let ref mut fout = File::create(output).unwrap();
 
+    let buffer = image::ImageBuffer::from_fn(width, height, |x, y| buffer[(y*width+x) as usize]);
     image::ImageRgb8(buffer).save(fout, format).unwrap();
 }

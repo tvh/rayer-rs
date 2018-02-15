@@ -76,7 +76,7 @@ impl<T: CoordinateBase> AABB<T> {
     }
 }
 
-pub trait Hitable<T: CoordinateBase> {
+pub trait Hitable<T: CoordinateBase>: Send + Sync {
     fn centroid(&self) -> Point3D<T> {
         let bbox = self.bbox();
         match bbox {

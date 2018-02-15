@@ -3,11 +3,13 @@
 #![feature(slice_patterns)]
 extern crate clap;
 extern crate cpuprofiler;
+extern crate crossbeam_channel;
 extern crate decorum;
 extern crate euclid;
 extern crate image;
 extern crate num_traits;
 extern crate palette;
+extern crate pbr;
 extern crate pdqselect;
 extern crate rand;
 extern crate rayon;
@@ -18,10 +20,13 @@ use euclid::*;
 use palette::*;
 use palette::pixel::Srgb;
 use palette::white_point::D65;
+use pbr::ProgressBar;
 use rayon::prelude::*;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
+use std::thread;
+use crossbeam_channel::bounded;
 
 mod texture;
 mod camera;
@@ -227,8 +232,18 @@ fn main() {
     let wl_low = 390.0;
     let wl_high = 700.0;
     let wl_span = wl_high-wl_low;
+    let mut pb = ProgressBar::new((width*height) as u64);
+    pb.format("╢▌▌░╟");
+    let (sender, receiver) = bounded(1000);
+    thread::spawn(move|| {
+        for _ in receiver.iter() {
+            pb.inc();
+        }
+        pb.finish_print("done");
+    });
     let buffer: Vec<_> =
-        (0..height*width).into_par_iter()
+        (0..height*width)
+        .into_par_iter()
         .map(|n| {
             let i = n%width;
             let j = height-(n/width);
@@ -252,6 +267,7 @@ fn main() {
                 ,(col.green*255.99) as u8
                 ,(col.blue*255.9) as u8
                 ];
+            sender.send(()).unwrap();
             image::Rgb(pixel)
         }).collect();
 

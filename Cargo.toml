@@ -7,6 +7,8 @@ authors = ["Timo von Holtz <tvh@tvholtz.de>"]
 debug = true
 
 [dependencies]
+crossbeam-channel = "0.1.2"
+pbr = "1.0.0"
 rayon = "1.0"
 cpuprofiler = "0.0.3"
 pdqselect = "0.1.0"

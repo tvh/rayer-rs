@@ -38,7 +38,11 @@ impl<T: CoordinateBase> Lambertian<T> {
 
 impl<T: CoordinateBase> Material<T> for Lambertian<T> {
     fn scatter(&self, r_in: Ray<T>, rec: HitRecord<T>) -> ScatterResult<T> {
-        let direction = rec.normal + rand_in_unit_sphere();
+        let mut direction;
+        while {
+            direction = rec.normal + rand_in_unit_sphere();
+            direction.square_length() < T::epsilon()*T::epsilon()
+        } {}
         let ray = Ray::new(rec.p, direction, r_in.wl);
         let attenuation = self.albedo.value(rec.uv, r_in.wl);
         ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}

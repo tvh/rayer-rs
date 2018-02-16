@@ -135,16 +135,16 @@ mod rgb_base_colors {
         } else if green <= red && green <= blue {
             ret += green * WHITE_SPECTRUM;
             if red <= blue {
-                ret += (blue - green) * MAGENTA_SPECTRUM;
+                ret += (red - green) * MAGENTA_SPECTRUM;
                 ret += (blue - red) * BLUE_SPECTRUM;
             } else {
-                ret += (red - green) * MAGENTA_SPECTRUM;
+                ret += (blue - green) * MAGENTA_SPECTRUM;
                 ret += (red - blue) * RED_SPECTRUM;
             }
         } else /* blue <= red && blue <= green */ {
             ret += blue * WHITE_SPECTRUM;
             if red <= green {
-                ret += (green - blue) * YELLOW_SPECTRUM;
+                ret += (red - blue) * YELLOW_SPECTRUM;
                 ret += (green - red) * GREEN_SPECTRUM;
             } else {
                 ret += (green - blue) * YELLOW_SPECTRUM;
@@ -163,11 +163,21 @@ impl HasReflectance for Rgb<D65, f32> where
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use palette::white_point::WhitePoint;
     use super::*;
     use test::*;
+    use quickcheck::{Arbitrary, Gen};
+
+    #[derive(Clone, Debug)]
+    struct TestRgb(Rgb<D65, f32>);
+    impl Arbitrary for TestRgb {
+        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+            TestRgb(Rgb::new(g.next_f32(), g.next_f32(), g.next_f32()))
+        }
+    }
 
     #[test]
     fn test_xyz_from_valid() {
@@ -224,16 +234,34 @@ mod tests {
     }
 
     #[test]
-    fn test_match_color_rgb() {
+    fn test_match_color_rgb_grey() {
         for &intensity in [0.0, 0.3, 0.5, 0.7, 1.0].iter() {
             let grey = Rgb::new(intensity, intensity, intensity);
             for i in 380..780 {
                 let val = grey.reflect(i as f32);
                 assert!((val - intensity).abs()<0.001
-                        ,"Relfectance is not like expected: wl={:}nm, intensity={:}, refl={:}"
+                        ,"Reflectance is not like expected: wl={:}nm, intensity={:}, refl={:}"
                         , i, intensity, val
                 );
             }
+        }
+    }
+
+    #[quickcheck]
+    fn reflected_intensity_seems_reasonable(rgb: TestRgb) -> () {
+        let TestRgb(rgb) = rgb;
+        let max_val = rgb.red.max(rgb.green).max(rgb.blue);
+        let min_val = rgb.red.min(rgb.green).min(rgb.blue);
+        for i in 380..780 {
+            let val = rgb.reflect(i as f32);
+            assert!(val>=min_val-0.01
+                    ,"Reflectance is lower than the lowest contributer: wl={:}nm, rbg={:?}, refl={:}"
+                    , i, rgb, val
+            );
+            assert!(val<=max_val+0.01
+                    ,"Reflectance is above the highest contributor: wl={:}nm, rbg={:?}, refl={:}"
+                    , i, rgb, val
+            );
         }
     }
 

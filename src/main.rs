@@ -1,6 +1,8 @@
 #![feature(test)]
 #![feature(const_fn)]
 #![feature(slice_patterns)]
+#![feature(plugin)]
+#![plugin(quickcheck_macros)]
 extern crate clap;
 extern crate cpuprofiler;
 extern crate crossbeam_channel;
@@ -11,6 +13,7 @@ extern crate num_traits;
 extern crate palette;
 extern crate pbr;
 extern crate pdqselect;
+extern crate quickcheck;
 extern crate rand;
 extern crate rayon;
 extern crate test;
@@ -73,7 +76,6 @@ fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f
             None => {
                 let unit_direction = r.direction.normalize();
                 let t: f32 = (unit_direction.y.to_f32().unwrap() + 1.0)*0.5;
-                let t = t.min(1.0).max(0.0);
                 let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
                 res += rgb.reflect(r.wl)*attenuation_acc;
                 return res;

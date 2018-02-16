@@ -7,15 +7,17 @@ authors = ["Timo von Holtz <tvh@tvholtz.de>"]
 debug = true
 
 [dependencies]
-crossbeam-channel = "0.1.2"
-pbr = "1.0.0"
-rayon = "1.0"
+clap = "2.29.2"
 cpuprofiler = "0.0.3"
-pdqselect = "0.1.0"
+crossbeam-channel = "0.1.2"
 decorum = "0.0.8"
 euclid = "0.16.4"
-rand = "0.4"
 image = "0.18.0"
-clap = "2.29.2"
 num-traits = "0.1.42"
 palette = { git = "https://github.com/Ogeon/palette.git", rev = "c5114e5" }
+pbr = "1.0.0"
+pdqselect = "0.1.0"
+quickcheck = "0.6"
+quickcheck_macros = "0.6"
+rand = "0.4"
+rayon = "1.0"

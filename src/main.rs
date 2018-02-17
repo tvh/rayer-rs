@@ -1,8 +1,10 @@
-#![feature(test)]
 #![feature(const_fn)]
-#![feature(slice_patterns)]
+#![feature(fixed_size_array)]
 #![feature(plugin)]
+#![feature(slice_patterns)]
+#![feature(test)]
 #![plugin(quickcheck_macros)]
+extern crate core;
 extern crate clap;
 extern crate cpuprofiler;
 extern crate crossbeam_channel;

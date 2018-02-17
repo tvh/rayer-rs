@@ -1,11 +1,12 @@
 use std::marker::PhantomData;
 use std::ops::*;
 use std::fmt::Debug;
+use core::array::FixedSizeArray;
 
 use color::HasReflectance;
 
 pub trait BinData: Debug + Send + Sync {
-    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]> + Debug + Send + Sync;
+    type Spectrum: Clone + Copy + FixedSizeArray<f32> + Debug + Send + Sync;
     const WL_0: f32;
     const BIN_WIDTH: f32;
 }
@@ -39,7 +40,7 @@ impl<T: BinData> Add for BinnedSpectrum<T> {
     type Output = BinnedSpectrum<T>;
     fn add(self, other: BinnedSpectrum<T>) -> BinnedSpectrum<T> {
         let mut res = self.spectrum.clone();
-        for (a, b) in other.spectrum.as_ref().iter().zip(res.as_mut().iter_mut()) {
+        for (a, b) in other.spectrum.as_slice().iter().zip(res.as_mut_slice().iter_mut()) {
             *b = *a+*b;
         }
         BinnedSpectrum::new(res)
@@ -48,7 +49,7 @@ impl<T: BinData> Add for BinnedSpectrum<T> {
 
 impl<T: BinData> AddAssign for BinnedSpectrum<T> {
     fn add_assign(&mut self, other: BinnedSpectrum<T>) {
-        for (a, b) in other.spectrum.as_ref().iter().zip(self.spectrum.as_mut().iter_mut()) {
+        for (a, b) in other.spectrum.as_slice().iter().zip(self.spectrum.as_mut_slice().iter_mut()) {
             *b = *a+*b;
         }
     }
@@ -58,7 +59,7 @@ impl<T: BinData> Mul<BinnedSpectrum<T>> for f32 {
     type Output = BinnedSpectrum<T>;
     fn mul(self, other: BinnedSpectrum<T>) -> BinnedSpectrum<T> {
         let mut res = other.spectrum.clone();
-        for x in res.as_mut().iter_mut() {
+        for x in res.as_mut_slice().iter_mut() {
             *x *= self;
         }
         BinnedSpectrum::new(res)
@@ -71,10 +72,11 @@ impl<T: BinData> HasReflectance for BinnedSpectrum<T> {
         if index < 0 {
             index = 0;
         }
-        if index >= 10 {
-            index = 9;
+        let len = self.spectrum.as_slice().len() as isize;
+        if index >= len {
+            index = len-1;
         }
-        self.spectrum.as_ref()[index as usize]
+        self.spectrum.as_slice()[index as usize]
     }
 }
 

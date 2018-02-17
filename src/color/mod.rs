@@ -112,11 +112,11 @@ mod tests {
         let min_val = rgb.red.min(rgb.green).min(rgb.blue);
         for i in 380..780 {
             let val = rgb.reflect(i as f32);
-            assert!(val>=min_val-0.01
+            assert!(val>=min_val-0.001
                     ,"Reflectance is lower than the lowest contributer: wl={:}nm, rbg={:?}, refl={:}"
                     , i, rgb, val
             );
-            assert!(val<=max_val+0.01
+            assert!(val<=max_val+0.001
                     ,"Reflectance is above the highest contributor: wl={:}nm, rbg={:?}, refl={:}"
                     , i, rgb, val
             );

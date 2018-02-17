@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_hit() {
-        let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.5, 0.5, 0.5));
+        let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
         let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
         let sphere = Sphere::new(point3(0.0, 0.0, 0.0), 1.0, material.clone());
         let ray = Ray::new(point3(-2.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0);

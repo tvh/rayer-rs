@@ -1,5 +1,5 @@
 use palette::*;
-use palette::white_point::D65;
+use palette::white_point::E;
 use std::fmt::Debug;
 
 mod binned_spectrum;
@@ -13,7 +13,7 @@ pub trait HasReflectance: Debug + Send + Sync {
 }
 
 
-impl HasReflectance for Rgb<D65, f32> where
+impl HasReflectance for Rgb<E, f32> where
 {
     fn reflect(&self, wl: f32) -> f32 {
         let spectrum = rgb_base_colors::rgb_to_spectrum(*self);
@@ -30,10 +30,10 @@ mod tests {
     use quickcheck::{Arbitrary, Gen};
 
     #[derive(Clone, Debug)]
-    struct TestRgb(Rgb<D65, f32>);
+    struct TestRgb(Rgb<E, f32>);
     impl Arbitrary for TestRgb {
         fn arbitrary<G: Gen>(g: &mut G) -> Self {
-            TestRgb(Rgb::new(g.next_f32(), g.next_f32(), g.next_f32()))
+            TestRgb(Rgb::with_wp(g.next_f32(), g.next_f32(), g.next_f32()))
         }
     }
 
@@ -46,7 +46,7 @@ mod tests {
         let mut max_z = 0.0;
         let mut max_z_freq = 0;
         for i in 380..780 {
-            let xyz: Xyz<D65, f32> = xyz_from_wavelength(i as f32);
+            let xyz = xyz_from_wavelength(i as f32);
             if xyz.x>max_x {
                 max_x = xyz.x;
                 max_x_freq = i;
@@ -60,7 +60,7 @@ mod tests {
                 max_z_freq = i;
             }
         }
-        let white = D65::get_xyz();
+        let white = E::get_xyz();
         let mut errors = String::new();
         if max_x>white.x {
             errors.push_str(&format!("Invalid x for wl={:}nm, x={:}\n", max_x_freq, max_x));
@@ -77,7 +77,7 @@ mod tests {
     #[test]
     fn test_reflect_wavelength() {
         let mut max_refl = 0.0;
-        let mut max_xyz = Xyz::new(0.0, 0.0, 0.0);
+        let mut max_xyz = Xyz::with_wp(0.0, 0.0, 0.0);
         let mut max_freq = 0;
         for i in 380..780 {
             let xyz = xyz_from_wavelength(i as f32);
@@ -94,7 +94,7 @@ mod tests {
     #[test]
     fn test_match_color_rgb_grey() {
         for &intensity in [0.0, 0.3, 0.5, 0.7, 1.0].iter() {
-            let grey = Rgb::new(intensity, intensity, intensity);
+            let grey = Rgb::with_wp(intensity, intensity, intensity);
             for i in 380..780 {
                 let val = grey.reflect(i as f32);
                 assert!((val - intensity).abs()<0.001
@@ -125,7 +125,7 @@ mod tests {
 
     #[bench]
     fn bench_match_color_rgb(bench: &mut Bencher) {
-        let white = black_box(Rgb::new(1.0, 1.0, 1.0));
+        let white = black_box(Rgb::with_wp(1.0, 1.0, 1.0));
         let wl = black_box(500.0);
         bench.iter(|| white.reflect(wl));
     }

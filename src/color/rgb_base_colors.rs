@@ -1,5 +1,5 @@
 use palette::*;
-use palette::white_point::D65;
+use palette::white_point::E;
 use super::binned_spectrum::{BinnedSpectrum, BinData};
 
 #[derive(Debug)]
@@ -104,7 +104,7 @@ static BLUE_SPECTRUM: ColorSpectrum10 = ColorSpectrum10::new([
     0.0496,
 ]);
 
-pub fn rgb_to_spectrum(rgb: Rgb<D65, f32>) -> ColorSpectrum10 {
+pub fn rgb_to_spectrum(rgb: Rgb<E, f32>) -> ColorSpectrum10 {
     let red = rgb.red;
     let green = rgb.green;
     let blue = rgb.blue;

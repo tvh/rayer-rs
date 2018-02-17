@@ -22,7 +22,7 @@ use clap::{Arg, App};
 use euclid::*;
 use palette::*;
 use palette::pixel::Srgb;
-use palette::white_point::D65;
+use palette::white_point::E;
 use pbr::ProgressBar;
 use rayon::prelude::*;
 use std::fs::File;
@@ -50,7 +50,7 @@ use random::*;
 use types::*;
 use texture::Texture;
 
-fn color<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> Xyz<D65, f32> {
+fn color<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> Xyz<E, f32> {
     let refl = reflectance(r, world);
     color::xyz_from_wavelength(r.wl) * refl
 }
@@ -76,7 +76,7 @@ fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f
             None => {
                 let unit_direction = r.direction.normalize();
                 let t: f32 = (unit_direction.y.to_f32().unwrap() + 1.0)*0.5;
-                let rgb = Rgb::new(1.0, 1.0, 1.0)*(1.0-t) + Rgb::new(0.5, 0.7, 1.0)*t;
+                let rgb = Rgb::with_wp(1.0, 1.0, 1.0)*(1.0-t) + Rgb::with_wp(0.5, 0.7, 1.0)*t;
                 res += rgb.reflect(r.wl)*attenuation_acc;
                 return res;
             }
@@ -114,11 +114,11 @@ fn just_earth() -> Scene<f32> {
 
 #[allow(dead_code)]
 fn three_spheres() -> Scene<f32> {
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.1, 0.2, 0.5));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.1, 0.2, 0.5));
     let mat1 = Arc::new(Lambertian::new(&color));
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.8, 0.8, 0.0));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.8, 0.8, 0.0));
     let mat2 = Arc::new(Lambertian::new(&color));
-    let mat3 = Arc::new(Metal::new(Rgb::new(0.8, 0.6, 0.2), 1.0));
+    let mat3 = Arc::new(Metal::new(Rgb::with_wp(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF66);
     let objects: Vec<Arc<Hitable<f32>>> = vec![
         Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
@@ -144,9 +144,9 @@ fn many_spheres() -> Scene<f32> {
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
     let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
     let ground = Arc::new(Lambertian::new(&texture));
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::new(0.4, 0.2, 0.1));
+    let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.4, 0.2, 0.1));
     let sphere0_mat = Arc::new(Lambertian::new(&color));
-    let sphere1_mat = Arc::new(Metal::new(Rgb::new(0.7, 0.6, 0.5), 0.0));
+    let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
     let mut objects: Vec<Arc<Hitable<f32>>> = vec![
         Arc::new(Triangle::new(
             (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
@@ -172,7 +172,7 @@ fn many_spheres() -> Scene<f32> {
             if (center - vec3(4.0, 0.2, 0.0)).to_vector().length() > 0.9 {
                 if choose_mat < 0.7 { // difuse
                     let color: Arc<Texture<f32>> =
-                        Arc::new(Rgb::new(
+                        Arc::new(Rgb::with_wp(
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
@@ -180,7 +180,7 @@ fn many_spheres() -> Scene<f32> {
                     let mat = Arc::new(Lambertian::new(&color));
                     objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
                 } else if choose_mat < 0.85 { //metal
-                    let color = Rgb::new(
+                    let color = Rgb::with_wp(
                         0.5*(1.0+next_f32()),
                         0.5*(1.0+next_f32()),
                         0.5*(1.0+next_f32()),
@@ -250,7 +250,7 @@ fn main() {
         .map(|n| {
             let i = n%width;
             let j = height-(n/width);
-            let mut col: Xyz<D65, f32> = Xyz::new(0.0, 0.0, 0.0);
+            let mut col: Xyz<E, f32> = Xyz::with_wp(0.0, 0.0, 0.0);
             let mut wl = gen_range(wl_low, wl_high);
             for _ in 0..num_samples {
                 let u = ((i as f32) + next_f32()) / (width as f32);

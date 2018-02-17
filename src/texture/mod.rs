@@ -37,7 +37,7 @@ impl<T: CoordinateBase> Texture<T> for ImageTexture {
         let i: u32 = i.max(0).min(nx as isize).to_u32().unwrap();
         let j: u32 = j.max(0).min(ny as isize).to_u32().unwrap();
         let Rgb{ data: [r,g,b] } = self.image[(i, j)];
-        let rgbf = palette::Rgb::new(
+        let rgbf = palette::Rgb::with_wp(
             r as f32/255.0,
             g as f32/255.0,
             b as f32/255.0,

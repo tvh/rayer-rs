@@ -2,6 +2,7 @@ use ray::Ray;
 use hitable::*;
 use types::*;
 
+#[allow(dead_code)]
 pub struct HitableList<'a, T: 'a>(pub &'a[&'a Hitable<T>]);
 
 impl<'a, T: CoordinateBase> Hitable<T> for HitableList<'a, T> {

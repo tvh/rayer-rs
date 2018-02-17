@@ -31,7 +31,7 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 use std::thread;
-use crossbeam_channel::bounded;
+use crossbeam_channel::unbounded;
 
 mod texture;
 mod camera;
@@ -239,7 +239,7 @@ fn main() {
     let wl_span = wl_high-wl_low;
     let mut pb = ProgressBar::new((width*height) as u64);
     pb.format("╢▌▌░╟");
-    let (sender, receiver) = bounded(1000);
+    let (sender, receiver) = unbounded();
     thread::spawn(move|| {
         for _ in receiver.iter() {
             pb.inc();

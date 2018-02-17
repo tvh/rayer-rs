@@ -21,6 +21,7 @@ extern crate rayon;
 extern crate test;
 
 use clap::{Arg, App};
+use crossbeam_channel::unbounded;
 use euclid::*;
 use palette::*;
 use palette::pixel::Srgb;
@@ -30,8 +31,7 @@ use rayon::prelude::*;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
-use std::thread;
-use crossbeam_channel::unbounded;
+use std::{thread, time};
 
 mod texture;
 mod camera;
@@ -241,8 +241,14 @@ fn main() {
     pb.format("╢▌▌░╟");
     let (sender, receiver) = unbounded();
     thread::spawn(move|| {
-        for _ in receiver.iter() {
-            pb.inc();
+        let delay = time::Duration::from_millis(100);
+        while let Ok(()) = receiver.recv() {
+            let mut i = 1;
+            while let Ok(()) = receiver.try_recv() {
+                i+=1;
+            }
+            pb.add(i);
+            thread::sleep(delay);
         }
         pb.finish_print("done");
     });

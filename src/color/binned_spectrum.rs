@@ -2,21 +2,32 @@ use std::marker::PhantomData;
 use std::ops::*;
 use std::fmt::Debug;
 use core::array::FixedSizeArray;
+use std::fmt;
 
 use color::HasReflectance;
 
-pub trait BinData: Debug + Send + Sync {
-    type Spectrum: Clone + Copy + FixedSizeArray<f32> + Debug + Send + Sync;
+pub trait BinData: Send + Sync {
+    type Spectrum: Clone + Copy + FixedSizeArray<f32> + Send + Sync;
     const WL_0: f32;
     const BIN_WIDTH: f32;
 }
 
 /// A binned representation of the visible spectrum.
 /// Values outside this range are clamped to the nearest index.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq)]
 pub struct BinnedSpectrum<T: BinData> {
     spectrum: T::Spectrum,
     marker: PhantomData<T>
+}
+
+impl<T: BinData> Debug for BinnedSpectrum<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("BinnedSpectrum")
+            .field("wl_0", &T::WL_0)
+            .field("bin_width", &T::BIN_WIDTH)
+            .field("spectrum", &self.spectrum.as_slice())
+            .finish()
+    }
 }
 
 impl<T: BinData> BinnedSpectrum<T> {

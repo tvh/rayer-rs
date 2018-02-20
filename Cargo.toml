@@ -13,6 +13,7 @@ crossbeam-channel = "0.1.2"
 decorum = "0.0.8"
 euclid = "0.16.4"
 image = "0.18.0"
+lazy_static = "1.0"
 num-traits = "0.1.42"
 palette = { git = "https://github.com/Ogeon/palette.git", rev = "c5114e5" }
 pbr = "1.0.0"

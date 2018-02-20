@@ -10,6 +10,8 @@ extern crate cpuprofiler;
 extern crate crossbeam_channel;
 extern crate decorum;
 extern crate euclid;
+#[macro_use]
+extern crate lazy_static;
 extern crate image;
 extern crate num_traits;
 extern crate palette;
@@ -28,6 +30,7 @@ use palette::pixel::Srgb;
 use palette::white_point::E;
 use pbr::ProgressBar;
 use rayon::prelude::*;
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
@@ -96,7 +99,6 @@ pub struct Scene<T> {
     vfov: T,
 }
 
-#[allow(dead_code)]
 fn just_earth() -> Scene<f32> {
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
     let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
@@ -114,7 +116,6 @@ fn just_earth() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
-#[allow(dead_code)]
 fn three_spheres() -> Scene<f32> {
     let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.1, 0.2, 0.5));
     let mat1 = Arc::new(Lambertian::new(&color));
@@ -140,7 +141,6 @@ fn three_spheres() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
-#[allow(dead_code)]
 fn many_spheres() -> Scene<f32> {
     let glass = Arc::new(Dielectric::SF66);
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
@@ -205,6 +205,16 @@ fn many_spheres() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
+lazy_static! {
+    static ref SCENES: HashMap<&'static str, fn() -> Scene<f32>> = {
+        let mut scenes: HashMap<_, fn() -> Scene<f32>> = HashMap::new();
+        scenes.insert("just_earth", just_earth);
+        scenes.insert("three_spheres", three_spheres);
+        scenes.insert("many_spheres", many_spheres);
+        scenes
+    };
+}
+
 fn main() {
     let matches =
         App::new("Rayer")
@@ -218,7 +228,21 @@ fn main() {
              .long("cpuprofile")
              .value_name("FILE")
              .takes_value(true))
+        .arg(Arg::with_name("scene")
+             .long("scene")
+             .value_name("SCENE_NAME")
+             .default_value("many_spheres")
+             .takes_value(true))
         .get_matches();
+
+    let do_profile = match matches.value_of("output") {
+        Some(out_file) => {
+            cpuprofiler::PROFILER.lock().unwrap().start(out_file).unwrap();
+            true
+        },
+        None => false
+    };
+
     let output = Path::new(matches.value_of("output").unwrap());
     let format = match output.extension().map(|ext| ext.to_str().unwrap()) {
         None => panic!("Cannot know format without extension"),
@@ -229,19 +253,20 @@ fn main() {
     };
     let output_str = String::from(output.to_str().unwrap());
 
-    let do_profile = match matches.value_of("output") {
-        Some(out_file) => {
-            cpuprofiler::PROFILER.lock().unwrap().start(out_file).unwrap();
-            true
-        },
-        None => false
+    let get_scene: fn() -> Scene<f32> = match matches.value_of("scene").unwrap() {
+        scene_name => match SCENES.get(scene_name) {
+            Some(&get_scene) => get_scene,
+            None => {
+                panic!("Invalid scene {:?}, available: {:?}", scene_name, SCENES.keys());
+            }
+        }
     };
 
     let width: u32 = 800;
     let height: u32 = 600;
     let num_samples = 100;
 
-    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = many_spheres();
+    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = get_scene();
     let world = BVH::initialize(objects.as_mut_slice());
     let up = Vector3D::new(0.0, 1.0, 0.0);
 

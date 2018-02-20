@@ -214,6 +214,10 @@ fn main() {
              .value_name("FILE")
              .required(true)
              .takes_value(true))
+        .arg(Arg::with_name("cpuprofile")
+             .long("cpuprofile")
+             .value_name("FILE")
+             .takes_value(true))
         .get_matches();
     let output = Path::new(matches.value_of("output").unwrap());
     let format = match output.extension().map(|ext| ext.to_str().unwrap()) {
@@ -224,6 +228,14 @@ fn main() {
         Some(ext) => panic!("Unknown extension: {:?}", ext),
     };
     let output_str = String::from(output.to_str().unwrap());
+
+    let do_profile = match matches.value_of("output") {
+        Some(out_file) => {
+            cpuprofiler::PROFILER.lock().unwrap().start(out_file).unwrap();
+            true
+        },
+        None => false
+    };
 
     let width: u32 = 800;
     let height: u32 = 600;
@@ -301,4 +313,7 @@ fn main() {
     drop(sender);
 
     saver.join().unwrap();
+    if do_profile {
+        cpuprofiler::PROFILER.lock().unwrap().stop().unwrap();
+    }
 }

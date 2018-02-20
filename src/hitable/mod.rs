@@ -27,22 +27,30 @@ impl<T: CoordinateBase> AABB<T> {
     pub fn intersects(&self, r: Ray<T>, t0: T, t1: T) -> bool {
         match self {
             &AABB { bounds } => {
-                let tmin = (bounds[r.sign.x as usize].x - r.origin.x) * r.inv_direction.x;
-                let tmax = (bounds[1-r.sign.x as usize].x - r.origin.x) * r.inv_direction.x;
+                let mut tmin = (bounds[r.sign.x as usize].x - r.origin.x) * r.inv_direction.x;
+                let mut tmax = (bounds[1-r.sign.x as usize].x - r.origin.x) * r.inv_direction.x;
                 let tymin = (bounds[r.sign.y as usize].y - r.origin.y) * r.inv_direction.y;
                 let tymax = (bounds[1-r.sign.y as usize].y - r.origin.y) * r.inv_direction.y;
                 if (tmin > tymax) || (tmax < tymin) {
                     return false;
                 }
-                let tmin = T::max(tmin, tymin);
-                let tmax = T::min(tmax, tymax);
+                if tymin>tmin {
+                    tmin = tymin;
+                }
+                if tymax<tmax {
+                    tmax = tymax;
+                }
                 let tzmin = (bounds[r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
                 let tzmax = (bounds[1-r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
                 if (tmin > tzmax) || (tmax < tzmin) {
                     return false;
                 }
-                let tmin = T::max(tmin, tzmin);
-                let tmax = T::min(tmax, tzmax);
+                if tzmin>tmin {
+                    tmin = tzmin;
+                }
+                if tzmax<tmax {
+                    tmax = tzmax;
+                }
                 (tmin < t1) && (tmax > t0)
             }
         }

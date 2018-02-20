@@ -33,6 +33,7 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::thread;
 
@@ -233,9 +234,14 @@ fn main() {
              .value_name("SCENE_NAME")
              .default_value("many_spheres")
              .takes_value(true))
+        .arg(Arg::with_name("samples")
+             .long("samples")
+             .value_name("NUMBER")
+             .default_value("100")
+             .takes_value(true))
         .get_matches();
 
-    let do_profile = match matches.value_of("output") {
+    let do_profile = match matches.value_of("cpuprofile") {
         Some(out_file) => {
             cpuprofiler::PROFILER.lock().unwrap().start(out_file).unwrap();
             true
@@ -264,7 +270,7 @@ fn main() {
 
     let width: u32 = 800;
     let height: u32 = 600;
-    let num_samples = 100;
+    let num_samples = u64::from_str(matches.value_of("samples").unwrap()).unwrap();
 
     let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = get_scene();
     let world = BVH::initialize(objects.as_mut_slice());

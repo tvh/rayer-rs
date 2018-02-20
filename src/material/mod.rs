@@ -138,7 +138,7 @@ fn refract<T: CoordinateBase>(v: Vector3D<T>, n: Vector3D<T>, ni_over_nt: T) -> 
 fn schlick<T: CoordinateBase>(cosine: T, ref_idx: T) -> T {
     let r0 = (T::one()-ref_idx) / (T::one()+ref_idx);
     let r0 = r0*r0;
-    r0 + (T::one() - r0)*T::powf(T::one()-cosine, From::from(5.0))
+    r0 + (T::one() - r0)*T::powi(T::one()-cosine, 5)
 }
 
 impl<T: CoordinateBase> Material<T> for Dielectric {

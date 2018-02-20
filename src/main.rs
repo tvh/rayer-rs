@@ -21,7 +21,7 @@ extern crate rayon;
 extern crate test;
 
 use clap::{Arg, App};
-use crossbeam_channel::unbounded;
+use crossbeam_channel::{unbounded, Sender};
 use euclid::*;
 use palette::*;
 use palette::pixel::Srgb;
@@ -31,7 +31,7 @@ use rayon::prelude::*;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
-use std::{thread, time};
+use std::thread;
 
 mod texture;
 mod camera;
@@ -223,9 +223,10 @@ fn main() {
         Some("jpeg") => image::JPEG,
         Some(ext) => panic!("Unknown extension: {:?}", ext),
     };
+    let output_str = String::from(output.to_str().unwrap());
 
-    let width = 800;
-    let height = 600;
+    let width: u32 = 800;
+    let height: u32 = 600;
     let num_samples = 100;
 
     let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = many_spheres();
@@ -236,54 +237,68 @@ fn main() {
 
     let wl_low = 390.0;
     let wl_high = 700.0;
-    let wl_span = wl_high-wl_low;
-    let mut pb = ProgressBar::new((width*height) as u64);
-    pb.format("╢▌▌░╟");
-    let (sender, receiver) = unbounded();
-    thread::spawn(move|| {
-        let delay = time::Duration::from_millis(100);
-        while let Ok(()) = receiver.recv() {
-            let mut i = 1;
-            while let Ok(()) = receiver.try_recv() {
-                i+=1;
+    let (sender, receiver): (Sender<Vec<_>>, _) = unbounded();
+    let saver = thread::spawn(move|| {
+        let mut pb = ProgressBar::new(num_samples);
+        pb.format("╢▌▌░╟");
+        let mut buffer = Vec::with_capacity((width*height) as usize);
+        for _ in 0..width*height {
+            buffer.push(Xyz::with_wp(0.0, 0.0, 0.0));
+        };
+        let mut samples_done = 0;
+        while let Ok(sample) = receiver.recv() {
+            let mut samples_pending = vec![sample];
+            while let Ok(sample) = receiver.try_recv() {
+                samples_pending.push(sample);
             }
-            pb.add(i);
-            thread::sleep(delay);
+            for i in 0..width*height {
+                let mut acc = Xyz::with_wp(0.0, 0.0, 0.0);
+                for sample in samples_pending.iter() {
+                    acc = acc + sample[i as usize];
+                };
+                buffer[i as usize] = buffer[i as usize] + acc;
+            };
+            samples_done += samples_pending.len();
+
+            let get_pixel = |x, y| {
+                let col = buffer[(y*width+x) as usize];
+                let col = (col.into_rgb()/(samples_done as f32)).clamp();
+                let col = Srgb::from(col);
+                let pixel =
+                    [(col.red*255.99) as u8
+                    ,(col.green*255.99) as u8
+                    ,(col.blue*255.99) as u8
+                    ];
+                image::Rgb(pixel)
+            };
+            let buffer = image::ImageBuffer::from_fn(width, height, get_pixel);
+            let output = Path::new(output_str.as_str());
+            let ref mut fout = File::create(output).unwrap();
+            image::ImageRgb8(buffer).save(fout, format).unwrap();
+            pb.add(samples_pending.len() as u64);
         }
         pb.finish_print("done");
     });
-    let buffer: Vec<_> =
-        (0..height*width)
+    let _res: () =
+        (0..num_samples)
         .into_par_iter()
-        .map(|n| {
-            let i = n%width;
-            let j = height-(n/width);
-            let mut col: Xyz<E, f32> = Xyz::with_wp(0.0, 0.0, 0.0);
-            let mut wl = gen_range(wl_low, wl_high);
-            for _ in 0..num_samples {
-                let u = ((i as f32) + next_f32()) / (width as f32);
-                let v = ((j as f32) + next_f32()) / (height as f32);
-                let r = cam.get_ray(u, v, wl);
-                col = col + color(r, &world);
-                wl += wl_span/(num_samples as f32);
-                if wl>wl_high {
-                    wl -= wl_span;
-                }
-            }
-            let col = col*3.0;
-            let col = (col.into_rgb()/(num_samples as f32)).clamp();
-            let col = Srgb::from(col);
-            let pixel =
-                [(col.red*255.99) as u8
-                ,(col.green*255.99) as u8
-                ,(col.blue*255.9) as u8
-                ];
-            sender.send(()).unwrap();
-            image::Rgb(pixel)
+        .map(|_| {
+            let sample: Vec<Xyz<E, f32>> =
+                (0..height*width)
+                .into_par_iter()
+                .map(|n| {
+                    let i = n%width;
+                    let j = height-(n/width);
+                    let wl = gen_range(wl_low, wl_high);
+                    let u = ((i as f32) + next_f32()) / (width as f32);
+                    let v = ((j as f32) + next_f32()) / (height as f32);
+                    let r = cam.get_ray(u, v, wl);
+                    color(r, &world)*3.0
+                }).collect();
+            sender.send(sample).unwrap();
         }).collect();
 
-    let ref mut fout = File::create(output).unwrap();
+    drop(sender);
 
-    let buffer = image::ImageBuffer::from_fn(width, height, |x, y| buffer[(y*width+x) as usize]);
-    image::ImageRgb8(buffer).save(fout, format).unwrap();
+    saver.join().unwrap();
 }

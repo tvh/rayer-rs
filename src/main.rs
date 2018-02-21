@@ -20,6 +20,7 @@ extern crate pdqselect;
 extern crate quickcheck;
 extern crate rand;
 extern crate rayon;
+extern crate tempfile;
 extern crate test;
 
 use clap::{Arg, App};
@@ -31,7 +32,7 @@ use palette::white_point::E;
 use pbr::ProgressBar;
 use rayon::prelude::*;
 use std::collections::HashMap;
-use std::fs::File;
+use std::io::Write;
 use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -289,6 +290,8 @@ fn main() {
             buffer.push(Xyz::with_wp(0.0, 0.0, 0.0));
         };
         let mut samples_done = 0;
+        let output_path = Path::new(output_str.as_str()).canonicalize().unwrap();
+        let output_dir = output_path.parent().unwrap();
         while let Ok(sample) = receiver.recv() {
             let mut samples_pending = vec![sample];
             while let Ok(sample) = receiver.try_recv() {
@@ -315,9 +318,10 @@ fn main() {
                 image::Rgb(pixel)
             };
             let buffer = image::ImageBuffer::from_fn(width, height, get_pixel);
-            let output = Path::new(output_str.as_str());
-            let ref mut fout = File::create(output).unwrap();
-            image::ImageRgb8(buffer).save(fout, format).unwrap();
+            let mut fout = tempfile::NamedTempFile::new_in(output_dir).unwrap();
+            image::ImageRgb8(buffer).save(&mut fout, format).unwrap();
+            fout.flush().unwrap();
+            fout.persist(&output_path).unwrap();
             pb.add(samples_pending.len() as u64);
         }
         pb.finish_print("done");

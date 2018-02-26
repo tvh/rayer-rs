@@ -2,30 +2,31 @@ use hitable::*;
 use pdqselect::select_by;
 use std::sync::Arc;
 use decorum::Ordered;
+use num_traits::Float;
 
-pub struct BVH<T: CoordinateBase> {
-    nodes: Vec<Node<T>>
+pub struct BVH {
+    nodes: Vec<Node>
 }
 
-enum Node<T: CoordinateBase> {
+enum Node {
     Bin {
         left_length: usize,
-        bbox: AABB<T>,
+        bbox: AABB,
     },
     Tip {
-        hitable: Arc<Hitable<T>>,
-        bbox: AABB<T>,
+        hitable: Arc<Hitable>,
+        bbox: AABB,
     },
     Empty,
 }
 
-impl<T: CoordinateBase> BVH<T> {
-    pub fn initialize(items: &[Arc<Hitable<T>>]) -> BVH<T> {
+impl BVH {
+    pub fn initialize(items: &[Arc<Hitable>]) -> BVH {
         #[derive(Clone, Copy)]
         enum Axis {
             X, Y, Z
         }
-        fn go<T: CoordinateBase>(items: &mut [(Point3D<T>, Arc<Hitable<T>>)], res: &mut Vec<Node<T>>) -> (AABB<T>, usize) {
+        fn go(items: &mut [(Point3D<f32>, Arc<Hitable>)], res: &mut Vec<Node>) -> (AABB, usize) {
             match items {
                 &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
@@ -40,19 +41,19 @@ impl<T: CoordinateBase> BVH<T> {
                 _ => {}
             }
             // Find the "longest" axis
-            let mut min_x = T::max_value();
-            let mut min_y = T::max_value();
-            let mut min_z = T::max_value();
-            let mut max_x = T::min_value();
-            let mut max_y = T::min_value();
-            let mut max_z = T::min_value();
+            let mut min_x = f32::max_value();
+            let mut min_y = f32::max_value();
+            let mut min_z = f32::max_value();
+            let mut max_x = f32::min_value();
+            let mut max_y = f32::min_value();
+            let mut max_z = f32::min_value();
             for &(centroid, _) in items.iter() {
-                min_x = T::min(min_x, centroid.x);
-                min_y = T::min(min_y, centroid.y);
-                min_z = T::min(min_z, centroid.z);
-                max_x = T::max(max_x, centroid.x);
-                max_y = T::max(max_y, centroid.y);
-                max_z = T::max(max_z, centroid.z);
+                min_x = f32::min(min_x, centroid.x);
+                min_y = f32::min(min_y, centroid.y);
+                min_z = f32::min(min_z, centroid.z);
+                max_x = f32::max(max_x, centroid.x);
+                max_y = f32::max(max_y, centroid.y);
+                max_z = f32::max(max_z, centroid.z);
             }
             let width_x = max_x-min_x;
             let width_y = max_y-min_y;
@@ -61,7 +62,7 @@ impl<T: CoordinateBase> BVH<T> {
             if width_y>width_x {
                 direction = Axis::Y;
             }
-            if width_z>T::max(width_x, width_y) {
+            if width_z>f32::max(width_x, width_y) {
                 direction = Axis::Z;
             }
             let split_location = items.len()/2;
@@ -96,8 +97,8 @@ impl<T: CoordinateBase> BVH<T> {
     }
 }
 
-impl<T: CoordinateBase> Hitable<T> for BVH<T> {
-    fn bbox(&self) -> AABB<T> {
+impl Hitable for BVH {
+    fn bbox(&self) -> AABB {
         let &BVH { ref nodes } = self;
         match nodes.as_slice() {
             &[] => AABB::empty(),
@@ -107,9 +108,9 @@ impl<T: CoordinateBase> Hitable<T> for BVH<T> {
         }
     }
 
-    fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let &BVH { ref nodes } = self;
-        fn go<T: CoordinateBase>(nodes: &[Node<T>], r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
+        fn go(nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
             match nodes {
                 &[] => None,
                 &[Node::Bin {bbox, left_length}, ref rest..] => {
@@ -162,9 +163,9 @@ mod tests {
     use texture::*;
 
     fn bench_build(bench: &mut Bencher, n: u64) {
-        let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
-        let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
-        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
+        let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());
+        let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
+        let material: Arc<Material> = Arc::new(Lambertian::new(&color));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
@@ -182,9 +183,9 @@ mod tests {
     }
 
     fn bench_intersect_bvh(bench: &mut Bencher, n: u64) {
-        let mut hitables: Vec<Arc<Hitable<f32>>> = black_box(Vec::new());
-        let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
-        let material: Arc<Material<f32>> = Arc::new(Lambertian::new(&color));
+        let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());
+        let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
+        let material: Arc<Material> = Arc::new(Lambertian::new(&color));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();

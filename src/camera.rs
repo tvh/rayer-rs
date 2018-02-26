@@ -1,23 +1,22 @@
 use ray::Ray;
 use euclid::*;
-use types::*;
 use random::*;
 
-pub struct Camera<T> {
-    origin: Point3D<T>,
-    lower_left_corner: Vector3D<T>,
-    horizontal: Vector3D<T>,
-    vertical: Vector3D<T>,
-    u: Vector3D<T>,
-    v: Vector3D<T>,
-    lens_radius: T,
+pub struct Camera {
+    origin: Point3D<f32>,
+    lower_left_corner: Vector3D<f32>,
+    horizontal: Vector3D<f32>,
+    vertical: Vector3D<f32>,
+    u: Vector3D<f32>,
+    v: Vector3D<f32>,
+    lens_radius: f32,
 }
 
-impl<T: CoordinateBase> Camera<T> {
-    pub fn new(look_from: Point3D<T>, look_at: Point3D<T>, up: Vector3D<T>, vfov: T, aspect: T, aperture: T, focus_dist: T) -> Self {
-        let lens_radius = aperture/From::from(2.0);
+impl Camera {
+    pub fn new(look_from: Point3D<f32>, look_at: Point3D<f32>, up: Vector3D<f32>, vfov: f32, aspect: f32, aperture: f32, focus_dist: f32) -> Self {
+        let lens_radius = aperture*0.5;
         let theta = vfov.to_radians();
-        let half_height = T::tan(theta/From::from(2.0));
+        let half_height = f32::tan(theta*0.5);
         let half_width = aspect * half_height;
         let origin = look_from;
         let w = (look_from - look_at).normalize();
@@ -37,8 +36,8 @@ impl<T: CoordinateBase> Camera<T> {
     }
 }
 
-impl<T: CoordinateBase> Camera<T> {
-    pub fn get_ray(&self, s: T, t: T, wl: f32) -> Ray<T> {
+impl Camera {
+    pub fn get_ray(&self, s: f32, t: f32, wl: f32) -> Ray {
         let rd = rand_in_unit_disk()*self.lens_radius;
         let offset = self.u*rd.x + self.v*rd.y;
         Ray::new(self.origin + offset, self.lower_left_corner + self.horizontal*s + self.vertical*t - offset, wl)

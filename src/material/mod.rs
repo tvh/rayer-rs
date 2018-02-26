@@ -5,39 +5,38 @@ use std::sync::Arc;
 use color::HasReflectance;
 use ray::Ray;
 use hitable::*;
-use types::*;
 use random::*;
 use texture::Texture;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct ScatterResult<T> {
+pub struct ScatterResult {
     pub emittance: f32,
-    pub reflection: Option<(f32, Ray<T>)>,
+    pub reflection: Option<(f32, Ray)>,
 }
 
-pub trait Material<T: CoordinateBase>: Debug + Send + Sync {
-    fn scatter(&self, r_in: Ray<T>, hit_record: HitRecord<T>) -> ScatterResult<T>;
+pub trait Material: Debug + Send + Sync {
+    fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> ScatterResult;
 }
 
-impl<'a, 'b, T: CoordinateBase> PartialEq<Material<T>+'b> for Material<T>+'a {
-    fn eq(&self, other: &(Material<T>+'b)) -> bool {
+impl<'a, 'b> PartialEq<Material+'b> for Material+'a {
+    fn eq(&self, other: &(Material+'b)) -> bool {
         format!("{:?}", self) == format!("{:?}", other)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Lambertian<T: CoordinateBase> {
-    albedo: Arc<Texture<T>>
+pub struct Lambertian {
+    albedo: Arc<Texture>
 }
 
-impl<T: CoordinateBase> Lambertian<T> {
-    pub fn new(albedo: &Arc<Texture<T>>) -> Self {
+impl Lambertian {
+    pub fn new(albedo: &Arc<Texture>) -> Self {
         Lambertian { albedo: albedo.clone() }
     }
 }
 
-impl<T: CoordinateBase> Material<T> for Lambertian<T> {
-    fn scatter(&self, r_in: Ray<T>, rec: HitRecord<T>) -> ScatterResult<T> {
+impl Material for Lambertian {
+    fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
         let direction = rec.normal + rand_in_unit_sphere();
         let ray = Ray::new(rec.p, direction, r_in.wl);
         let attenuation = self.albedo.value(rec.uv, r_in.wl);
@@ -46,17 +45,17 @@ impl<T: CoordinateBase> Material<T> for Lambertian<T> {
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct Metal<T: CoordinateBase, R: HasReflectance> {
+pub struct Metal<R: HasReflectance> {
     albedo: R,
-    fuzz: T,
+    fuzz: f32,
 }
 
-impl<R: HasReflectance, T: CoordinateBase> Metal<T, R> {
-    pub fn new(albedo: R, fuzz: T) -> Self {
-        let fuzz = if fuzz<T::zero() {
-            T::zero()
-        } else if fuzz>T::one() {
-            T::one()
+impl<R: HasReflectance> Metal<R> {
+    pub fn new(albedo: R, fuzz: f32) -> Self {
+        let fuzz = if fuzz<0.0 {
+            0.0
+        } else if fuzz>1.0 {
+            1.0
         } else {
             fuzz
         };
@@ -64,8 +63,8 @@ impl<R: HasReflectance, T: CoordinateBase> Metal<T, R> {
     }
 }
 
-impl<T: CoordinateBase, R: HasReflectance> Material<T> for Metal<T, R> {
-    fn scatter(&self, r_in: Ray<T>, hit_record: HitRecord<T>) -> ScatterResult<T> {
+impl<R: HasReflectance> Material for Metal<R> {
+    fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> ScatterResult {
         let reflected = reflect(r_in.direction, hit_record.normal);
         let scattered =  reflected + rand_in_unit_sphere()*self.fuzz;
         let ray = Ray::new(hit_record.p, scattered, r_in.wl);
@@ -74,8 +73,8 @@ impl<T: CoordinateBase, R: HasReflectance> Material<T> for Metal<T, R> {
     }
 }
 
-fn reflect<T: CoordinateBase>(v: Vector3D<T>, n: Vector3D<T>) -> Vector3D<T> {
-        v - n*v.dot(n)*From::from(2.0)
+fn reflect(v: Vector3D<f32>, n: Vector3D<f32>) -> Vector3D<f32> {
+    v - n*v.dot(n)*2.0
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -123,35 +122,35 @@ impl Dielectric {
         };
 }
 
-fn refract<T: CoordinateBase>(v: Vector3D<T>, n: Vector3D<T>, ni_over_nt: T) -> Option<Vector3D<T>> {
+fn refract(v: Vector3D<f32>, n: Vector3D<f32>, ni_over_nt: f32) -> Option<Vector3D<f32>> {
     let uv = v.normalize();
     let dt = uv.dot(n);
-    let discriminant = T::one() - ni_over_nt*ni_over_nt*(T::one()-dt*dt);
-    if discriminant > T::zero() {
-        let refracted = (uv - n*dt)*ni_over_nt - n*T::sqrt(discriminant);
+    let discriminant = 1.0 - ni_over_nt*ni_over_nt*(1.0-dt*dt);
+    if discriminant > 0.0 {
+        let refracted = (uv - n*dt)*ni_over_nt - n*f32::sqrt(discriminant);
         Some(refracted)
     } else {
         None
     }
 }
 
-fn schlick<T: CoordinateBase>(cosine: T, ref_idx: T) -> T {
-    let r0 = (T::one()-ref_idx) / (T::one()+ref_idx);
+fn schlick(cosine: f32, ref_idx: f32) -> f32 {
+    let r0 = (1.0-ref_idx) / (1.0+ref_idx);
     let r0 = r0*r0;
-    r0 + (T::one() - r0)*T::powi(T::one()-cosine, 5)
+    r0 + (1.0 - r0)*f32::powi(1.0-cosine, 5)
 }
 
-impl<T: CoordinateBase> Material<T> for Dielectric {
-    fn scatter(&self, r_in: Ray<T>, rec: HitRecord<T>) -> ScatterResult<T> {
+impl Material for Dielectric {
+    fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
         let wl_2 = r_in.wl*r_in.wl;
         let ref_idx_squared =
             1.0 +
             self.b1*wl_2/(wl_2-self.c1) +
             self.b2*wl_2/(wl_2-self.c2) +
             self.b3*wl_2/(wl_2-self.c3);
-        let ref_idx: T = From::from(ref_idx_squared.sqrt());
+        let ref_idx = ref_idx_squared.sqrt();
         let (outward_normal, ni_over_nt, cosine) =
-            if r_in.direction.dot(rec.normal) > T::zero() {
+            if r_in.direction.dot(rec.normal) > 0.0 {
                 (-rec.normal,
                  ref_idx,
                  ref_idx * r_in.direction.dot(rec.normal) / r_in.direction.length()
@@ -169,7 +168,7 @@ impl<T: CoordinateBase> Material<T> for Dielectric {
                 Ray::new(rec.p, reflected, r_in.wl)
             },
             Some(refracted) => {
-                if rand::<T>() < schlick(cosine, ref_idx) {
+                if next_f32() < schlick(cosine, ref_idx) {
                     let reflected = reflect(r_in.direction, rec.normal);
                     Ray::new(rec.p, reflected, r_in.wl)
                 } else {

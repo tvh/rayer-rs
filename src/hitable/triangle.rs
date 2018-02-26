@@ -4,20 +4,20 @@ use std::borrow::Borrow;
 
 use hitable::*;
 
-pub struct Triangle<T: CoordinateBase> {
-    vert: (Point3D<T>, Point3D<T>, Point3D<T>),
-    normal: (Vector3D<T>, Vector3D<T>, Vector3D<T>),
-    uv: (Vector2D<T>, Vector2D<T>, Vector2D<T>),
-    material: Arc<Material<T>>,
+pub struct Triangle {
+    vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
+    normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
+    uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
+    material: Arc<Material>,
 }
 
-impl<T: CoordinateBase> Triangle<T> {
+impl Triangle {
     pub fn new(
-        vert: (Point3D<T>, Point3D<T>, Point3D<T>),
-        normal: (Vector3D<T>, Vector3D<T>, Vector3D<T>),
-        uv: (Vector2D<T>, Vector2D<T>, Vector2D<T>),
-        material: Arc<Material<T>>,
-    ) -> Triangle<T> {
+        vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
+        normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
+        uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
+        material: Arc<Material>,
+    ) -> Triangle {
         Triangle {
             vert,
             normal,
@@ -27,25 +27,25 @@ impl<T: CoordinateBase> Triangle<T> {
     }
 }
 
-impl<T: CoordinateBase> Hitable<T> for Triangle<T> {
-    fn bbox(&self) -> AABB<T> {
+impl Hitable for Triangle {
+    fn bbox(&self) -> AABB {
         let mut low = self.vert.0;
         let mut high = self.vert.0;
         for obj in [self.vert.1, self.vert.2].iter() {
             low = point3(
-                T::min(low.x, obj.x),
-                T::min(low.y, obj.y),
-                T::min(low.z, obj.z),
+                f32::min(low.x, obj.x),
+                f32::min(low.y, obj.y),
+                f32::min(low.z, obj.z),
             );
             high = point3(
-                T::max(high.x, obj.x),
-                T::max(high.y, obj.y),
-                T::max(high.z, obj.z),
+                f32::max(high.x, obj.x),
+                f32::max(high.y, obj.y),
+                f32::max(high.z, obj.z),
             );
         }
         AABB { bounds: [low, high] }
     }
-    fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         // find vectors for two edges sharing vert0
         let edge1 = self.vert.1 - self.vert.0;
         let edge2 = self.vert.2 - self.vert.0;
@@ -61,14 +61,14 @@ impl<T: CoordinateBase> Hitable<T> for Triangle<T> {
         let tvec = r.origin - self.vert.0;
         // calculate U parameter and test bounds
         let u = tvec.dot(pvec) * inv_det;
-        if u<T::zero() || u>T::one() {
+        if u<0.0 || u>1.0 {
             return None;
         }
         // prepare to test V parameter
         let qvec = tvec.cross(edge1);
         // calculate V parameter and test bounds
         let v = r.direction.dot(qvec) * inv_det;
-        if v<T::zero() || v>T::one() {
+        if v<0.0 || v>1.0 {
             return None;
         }
         // calculate t, ray intersects triangle
@@ -76,8 +76,8 @@ impl<T: CoordinateBase> Hitable<T> for Triangle<T> {
         if t<=t_min || t>=t_max {
             return None;
         }
-        let w = T::one() - u - v;
-        if w<T::zero() || w>T::one() {
+        let w = 1.0 - u - v;
+        if w<0.0 || w>1.0 {
             return None;
         }
         let normal = (self.normal.0*v + self.normal.1*u + self.normal.2*w).normalize();

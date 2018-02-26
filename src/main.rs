@@ -26,6 +26,7 @@ extern crate test;
 use clap::{Arg, App};
 use crossbeam_channel::{unbounded, Sender};
 use euclid::*;
+use num_traits::Float;
 use palette::*;
 use palette::pixel::Srgb;
 use palette::white_point::E;
@@ -45,7 +46,6 @@ mod hitable;
 mod material;
 mod random;
 mod ray;
-mod types;
 
 use color::HasReflectance;
 use hitable::Hitable;
@@ -54,20 +54,19 @@ use hitable::sphere::*;
 use hitable::triangle::*;
 use material::*;
 use random::*;
-use types::*;
 use texture::Texture;
 
-fn color<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> Xyz<E, f32> {
+fn color<H: Hitable>(r: ray::Ray, world: &H) -> Xyz<E, f32> {
     let refl = reflectance(r, world);
     color::xyz_from_wavelength(r.wl) * refl
 }
 
-fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f32 {
+fn reflectance<H: Hitable>(r: ray::Ray, world: &H) -> f32 {
     let mut r = r;
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;
     for _ in 0..50 {
-        let rec = world.hit(r, T::sqrt(T::epsilon()), T::max_value());
+        let rec = world.hit(r, f32::sqrt(f32::epsilon()), f32::max_value());
         match rec {
             Some(rec) => {
                 let mat_res = rec.material.scatter(r, rec);
@@ -82,7 +81,7 @@ fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f
             },
             None => {
                 let unit_direction = r.direction.normalize();
-                let t: f32 = (unit_direction.y.to_f32().unwrap() + 1.0)*0.5;
+                let t: f32 = (unit_direction.y + 1.0)*0.5;
                 let rgb = Rgb::with_wp(1.0, 1.0, 1.0)*(1.0-t) + Rgb::with_wp(0.5, 0.7, 1.0)*t;
                 res += rgb.reflect(r.wl)*attenuation_acc;
                 return res;
@@ -92,20 +91,20 @@ fn reflectance<T: CoordinateBase, H: Hitable<T>>(r: ray::Ray<T>, world: &H) -> f
     return res;
 }
 
-pub struct Scene<T> {
-    objects: Vec<Arc<Hitable<f32>>>,
-    look_from: Point3D<T>,
-    look_at: Point3D<T>,
-    focus_dist: T,
-    aperture: T,
-    vfov: T,
+pub struct Scene {
+    objects: Vec<Arc<Hitable>>,
+    look_from: Point3D<f32>,
+    look_at: Point3D<f32>,
+    focus_dist: f32,
+    aperture: f32,
+    vfov: f32,
 }
 
-fn just_earth() -> Scene<f32> {
+fn just_earth() -> Scene {
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
-    let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
+    let texture: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
     let material = Arc::new(Lambertian::new(&texture));
-    let objects: Vec<Arc<Hitable<f32>>> = vec![
+    let objects: Vec<Arc<Hitable>> = vec![
         Arc::new(Sphere::new(point3(0.0, 0.0, 0.0), 1.0, material)),
     ];
 
@@ -118,14 +117,14 @@ fn just_earth() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
-fn three_spheres() -> Scene<f32> {
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.1, 0.2, 0.5));
+fn three_spheres() -> Scene {
+    let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.1, 0.2, 0.5));
     let mat1 = Arc::new(Lambertian::new(&color));
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.8, 0.8, 0.0));
+    let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.8, 0.8, 0.0));
     let mat2 = Arc::new(Lambertian::new(&color));
     let mat3 = Arc::new(Metal::new(Rgb::with_wp(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF66);
-    let objects: Vec<Arc<Hitable<f32>>> = vec![
+    let objects: Vec<Arc<Hitable>> = vec![
         Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
         Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
         Arc::new(Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3)),
@@ -143,15 +142,15 @@ fn three_spheres() -> Scene<f32> {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
 }
 
-fn many_spheres() -> Scene<f32> {
+fn many_spheres() -> Scene {
     let glass = Arc::new(Dielectric::SF66);
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
-    let texture: Arc<Texture<f32>> = Arc::new(texture::ImageTexture::new(&image));
+    let texture: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
     let ground = Arc::new(Lambertian::new(&texture));
-    let color: Arc<Texture<f32>> = Arc::new(Rgb::with_wp(0.4, 0.2, 0.1));
+    let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.4, 0.2, 0.1));
     let sphere0_mat = Arc::new(Lambertian::new(&color));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
-    let mut objects: Vec<Arc<Hitable<f32>>> = vec![
+    let mut objects: Vec<Arc<Hitable>> = vec![
         Arc::new(Triangle::new(
             (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
             (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
@@ -175,7 +174,7 @@ fn many_spheres() -> Scene<f32> {
             let center = point3(a as f32+0.9*next_f32(), 0.2, b as f32+0.9*next_f32());
             if (center - vec3(4.0, 0.2, 0.0)).to_vector().length() > 0.9 {
                 if choose_mat < 0.7 { // difuse
-                    let color: Arc<Texture<f32>> =
+                    let color: Arc<Texture> =
                         Arc::new(Rgb::with_wp(
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
@@ -208,8 +207,8 @@ fn many_spheres() -> Scene<f32> {
 }
 
 lazy_static! {
-    static ref SCENES: HashMap<&'static str, fn() -> Scene<f32>> = {
-        let mut scenes: HashMap<_, fn() -> Scene<f32>> = HashMap::new();
+    static ref SCENES: HashMap<&'static str, fn() -> Scene> = {
+        let mut scenes: HashMap<_, fn() -> Scene> = HashMap::new();
         scenes.insert("just_earth", just_earth);
         scenes.insert("three_spheres", three_spheres);
         scenes.insert("many_spheres", many_spheres);
@@ -260,7 +259,7 @@ fn main() {
     };
     let output_str = String::from(output.to_str().unwrap());
 
-    let get_scene: fn() -> Scene<f32> = match matches.value_of("scene").unwrap() {
+    let get_scene: fn() -> Scene = match matches.value_of("scene").unwrap() {
         scene_name => match SCENES.get(scene_name) {
             Some(&get_scene) => get_scene,
             None => {

@@ -1,20 +1,19 @@
 use ray::Ray;
 use hitable::*;
-use types::*;
 
 #[allow(dead_code)]
-pub struct HitableList<'a, T: 'a>(pub &'a[&'a Hitable<T>]);
+pub struct HitableList<'a>(pub &'a[&'a Hitable]);
 
-impl<'a, T: CoordinateBase> Hitable<T> for HitableList<'a, T> {
-    fn bbox(&self) -> AABB<T> {
-        let mut bbox = AABB::<T>::empty();
+impl<'a> Hitable for HitableList<'a> {
+    fn bbox(&self) -> AABB {
+        let mut bbox = AABB::empty();
 
         for obj in self.0.iter() {
             bbox = bbox.merge(obj.bbox());
         }
         bbox
     }
-    fn hit(&self, r: Ray<T>, t_min: T, t_max: T) -> Option<HitRecord<T>> {
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut closest_match = None;
         let mut closest_so_far = t_max;
         for obj in self.0.iter() {

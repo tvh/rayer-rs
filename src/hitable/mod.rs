@@ -69,14 +69,14 @@ impl AABB {
         match (self, other) {
             (AABB { bounds: [low_0, high_0] }, AABB { bounds: [low_1, high_1] }) => {
                 let low = point3(
-                    f32::min(low_0.x, low_1.x),
-                    f32::min(low_0.y, low_1.y),
-                    f32::min(low_0.z, low_1.z),
+                    if low_0.x<low_1.x { low_0.x } else { low_1.x },
+                    if low_0.y<low_1.y { low_0.y } else { low_1.y },
+                    if low_0.z<low_1.z { low_0.z } else { low_1.z },
                 );
                 let high = point3(
-                    f32::max(high_0.x, high_1.x),
-                    f32::max(high_0.y, high_1.y),
-                    f32::max(high_0.z, high_1.z),
+                    if high_0.x>high_1.x { high_0.x } else { high_1.x },
+                    if high_0.y>high_1.y { high_0.y } else { high_1.y },
+                    if high_0.z>high_1.z { high_0.z } else { high_1.z },
                 );
                 AABB { bounds: [low, high] }
             }
@@ -119,5 +119,12 @@ mod tests {
         let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0));
         let aabb = black_box(AABB::empty());
         bench.iter(|| aabb.intersects(ray, f32::epsilon(), f32::max_value()));
+    }
+
+    #[bench]
+    fn bench_merge_aabb(bench: &mut Bencher) {
+        let aabb1 = black_box(AABB { bounds: [point3(-1.0, -1.0, -1.0), point3(0.0, 0.0, 0.0)] });
+        let aabb2 = black_box(AABB { bounds: [point3(0.0, 0.0, 0.0), point3(1.0, 1.0, 1.0)] });
+        bench.iter(|| aabb1.merge(aabb2) );
     }
 }

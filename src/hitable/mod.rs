@@ -24,7 +24,7 @@ pub struct AABB {
 }
 
 impl AABB {
-    pub fn intersects(&self, r: Ray, t0: f32, t1: f32) -> bool {
+    pub fn intersects(&self, r: Ray, t0: f32, t1: f32) -> Option<(f32, f32)> {
         match self {
             &AABB { bounds } => {
                 let mut tmin = (bounds[r.sign.x as usize].x - r.origin.x) * r.inv_direction.x;
@@ -32,7 +32,7 @@ impl AABB {
                 let tymin = (bounds[r.sign.y as usize].y - r.origin.y) * r.inv_direction.y;
                 let tymax = (bounds[1-r.sign.y as usize].y - r.origin.y) * r.inv_direction.y;
                 if (tmin > tymax) || (tmax < tymin) {
-                    return false;
+                    return None;
                 }
                 if tymin>tmin {
                     tmin = tymin;
@@ -43,7 +43,7 @@ impl AABB {
                 let tzmin = (bounds[r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
                 let tzmax = (bounds[1-r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
                 if (tmin > tzmax) || (tmax < tzmin) {
-                    return false;
+                    return None;
                 }
                 if tzmin>tmin {
                     tmin = tzmin;
@@ -51,7 +51,11 @@ impl AABB {
                 if tzmax<tmax {
                     tmax = tzmax;
                 }
-                (tmin < t1) && (tmax > t0)
+                if (tmin < t1) && (tmax > t0) {
+                    Some((tmin, tmax))
+                } else {
+                    None
+                }
             }
         }
     }

@@ -20,6 +20,16 @@ enum Node {
     Empty,
 }
 
+impl Node {
+    fn bbox(&self) -> AABB {
+        match self {
+            &Node::Empty => AABB::empty(),
+            &Node::Bin{bbox, ..} => bbox,
+            &Node::Tip{bbox, ..} => bbox
+        }
+    }
+}
+
 impl BVH {
     pub fn initialize(items: &[Arc<Hitable>]) -> BVH {
         #[derive(Clone, Copy)]
@@ -113,36 +123,51 @@ impl Hitable for BVH {
         fn go(nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
             match nodes {
                 &[] => None,
-                &[Node::Bin {bbox, left_length}, ref rest..] => {
-                    if !bbox.intersects(r, t_min, t_max) {
-                        return None;
-                    }
-                    let mut closest_match = None;
-                    let mut closest_so_far = t_max;
+                &[Node::Bin {left_length, ..}, ref left..] => {
+                    let right = &left[left_length..];
+                    let left_hit = left[0].bbox().intersects(r, t_min, t_max);
+                    let right_hit = right[0].bbox().intersects(r, t_min, t_max);
 
-                    match go(rest, r, t_min, closest_so_far) {
-                        None => (),
-                        Some(hit) => {
-                            closest_match = Some(hit);
-                            closest_so_far = hit.t;
+                    match (left_hit, right_hit) {
+                        (None, None) => None,
+                        (Some(_), None) => go(left, r, t_min, t_max),
+                        (None, Some(_)) => go(right, r, t_min, t_max),
+                        (Some(left_range), Some(right_range)) => {
+                            let mut closest_match = None;
+                            let mut closest_so_far = t_max;
+
+                            let (first, (second, second_range)) =
+                                if left_range.0<right_range.0 {
+                                    (left, (right, right_range))
+                                } else {
+                                    (right, (left, left_range))
+                                };
+
+                            match go(first, r, t_min, t_max) {
+                                None => (),
+                                Some(hit) => {
+                                    closest_match = Some(hit);
+                                    closest_so_far = hit.t;
+                                }
+                            }
+
+                            if closest_so_far<second_range.0 {
+                                return closest_match;
+                            }
+
+                            match go(second, r, t_min, closest_so_far) {
+                                None => (),
+                                Some(hit) => {
+                                    closest_match = Some(hit);
+                                }
+                            }
+
+                            closest_match
                         }
                     }
-                    let right = &rest[left_length..];
-                    match go(right, r, t_min, closest_so_far) {
-                        None => (),
-                        Some(hit) => {
-                            closest_match = Some(hit);
-                        }
-                    }
-
-                    closest_match
                 },
-                &[Node::Tip {bbox, ref hitable}, ..] => {
-                    if bbox.intersects(r, t_min, t_max) {
-                        hitable.hit(r, t_min, t_max)
-                    } else {
-                        None
-                    }
+                &[Node::Tip {ref hitable, ..}, ..] => {
+                    hitable.hit(r, t_min, t_max)
                 },
                 &[Node::Empty, ..] => None,
             }

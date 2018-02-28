@@ -3,6 +3,7 @@ use pdqselect::select_by;
 use std::sync::Arc;
 use decorum::Ordered;
 use num_traits::Float;
+use std::ptr;
 
 pub struct BVH {
     nodes: Vec<Node>
@@ -89,14 +90,18 @@ impl BVH {
                 ),
             };
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
-            // Just put a placeholder in to not break the vector
             let current_pos = res.len();
-            let empty_elem: Arc<Hitable> = Arc::new(BVH{nodes: Vec::new()});
-            res.push(Node::Tip{ hitable: empty_elem, bbox: AABB::empty() });
+            // This spot will be filled later
+            unsafe { res.set_len(current_pos+1) };
             let (left_bbox, left_length) = go(&mut left_items, res);
             let (right_bbox, right_length) = go(&mut right_items, res);
             let bbox = left_bbox.merge(right_bbox);
-            res[current_pos] = Node::Bin{ left_length, bbox };
+            unsafe {
+                ptr::write(
+                    res.as_mut_ptr().offset(current_pos as isize),
+                    Node::Bin{ left_length, bbox }
+                );
+            };
             (bbox, 1+left_length+right_length)
         }
         let mut items: Vec<_> = items.iter().map(|x| (x.centroid(), x.clone()) ).collect();

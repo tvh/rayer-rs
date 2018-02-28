@@ -17,13 +17,11 @@ enum Node {
         hitable: Arc<Hitable>,
         bbox: AABB,
     },
-    Empty,
 }
 
 impl Node {
     fn bbox(&self) -> AABB {
         match self {
-            &Node::Empty => AABB::empty(),
             &Node::Bin{bbox, ..} => bbox,
             &Node::Tip{bbox, ..} => bbox
         }
@@ -93,7 +91,8 @@ impl BVH {
             let (mut left_items, mut right_items) = items.split_at_mut(split_location);
             // Just put a placeholder in to not break the vector
             let current_pos = res.len();
-            res.push(Node::Empty);
+            let empty_elem: Arc<Hitable> = Arc::new(BVH{nodes: Vec::new()});
+            res.push(Node::Tip{ hitable: empty_elem, bbox: AABB::empty() });
             let (left_bbox, left_length) = go(&mut left_items, res);
             let (right_bbox, right_length) = go(&mut right_items, res);
             let bbox = left_bbox.merge(right_bbox);
@@ -114,7 +113,6 @@ impl Hitable for BVH {
             &[] => AABB::empty(),
             &[Node::Tip {bbox, ..}, ..] => bbox,
             &[Node::Bin {bbox, ..}, ..] => bbox,
-            &[Node::Empty, ..] => AABB::empty(),
         }
     }
 
@@ -169,7 +167,6 @@ impl Hitable for BVH {
                 &[Node::Tip {ref hitable, ..}, ..] => {
                     hitable.hit(r, t_min, t_max)
                 },
-                &[Node::Empty, ..] => None,
             }
         }
         go(nodes.as_slice(), r, t_min, t_max)

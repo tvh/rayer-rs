@@ -2,7 +2,6 @@ use hitable::*;
 use pdqselect::select_by;
 use std::sync::Arc;
 use decorum::Ordered;
-use num_traits::Float;
 use std::ptr;
 
 pub struct BVH {
@@ -50,19 +49,19 @@ impl BVH {
                 _ => {}
             }
             // Find the "longest" axis
-            let mut min_x = f32::max_value();
-            let mut min_y = f32::max_value();
-            let mut min_z = f32::max_value();
-            let mut max_x = f32::min_value();
-            let mut max_y = f32::min_value();
-            let mut max_z = f32::min_value();
-            for &(centroid, _) in items.iter() {
-                min_x = f32::min(min_x, centroid.x);
-                min_y = f32::min(min_y, centroid.y);
-                min_z = f32::min(min_z, centroid.z);
-                max_x = f32::max(max_x, centroid.x);
-                max_y = f32::max(max_y, centroid.y);
-                max_z = f32::max(max_z, centroid.z);
+            let mut min_x = items[0].0.x;
+            let mut min_y = items[0].0.y;
+            let mut min_z = items[0].0.z;
+            let mut max_x = items[0].0.x;
+            let mut max_y = items[0].0.y;
+            let mut max_z = items[0].0.z;
+            for &(centroid, _) in items[1..].iter() {
+                if min_x>centroid.x { min_x=centroid.x };
+                if min_y>centroid.y { min_y=centroid.y };
+                if min_z>centroid.z { min_z=centroid.z };
+                if max_x<centroid.x { max_x=centroid.x };
+                if max_y<centroid.y { max_y=centroid.y };
+                if max_z<centroid.z { max_z=centroid.z };
             }
             let width_x = max_x-min_x;
             let width_y = max_y-min_y;

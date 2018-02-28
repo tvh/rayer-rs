@@ -239,6 +239,14 @@ fn main() {
              .value_name("NUMBER")
              .default_value("100")
              .takes_value(true))
+        .arg(Arg::with_name("width")
+             .long("width")
+             .value_name("NUMBER")
+             .takes_value(true))
+        .arg(Arg::with_name("height")
+             .long("height")
+             .value_name("NUMBER")
+             .takes_value(true))
         .get_matches();
 
     let do_profile = match matches.value_of("cpuprofile") {
@@ -268,8 +276,26 @@ fn main() {
         }
     };
 
-    let width: u32 = 800;
-    let height: u32 = 600;
+    let def_width: u32 = 800;
+    let def_height: u32 = 600;
+    let (width, height) = match (matches.value_of("width"), matches.value_of("height")) {
+        (None, None) => (def_width, def_height),
+        (Some(width_str), None) => {
+            let width = u32::from_str(width_str).unwrap();
+            let height = width*def_height/def_width;
+            (width, height)
+        },
+        (None, Some(height_str)) => {
+            let height = u32::from_str(height_str).unwrap();
+            let width = height*def_width/def_height;
+            (width, height)
+        },
+        (Some(width_str), Some(height_str)) => {
+            let width = u32::from_str(width_str).unwrap();
+            let height = u32::from_str(height_str).unwrap();
+            (width, height)
+        },
+    };
     let num_samples = u64::from_str(matches.value_of("samples").unwrap()).unwrap();
 
     let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = get_scene();

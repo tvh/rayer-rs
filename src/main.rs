@@ -311,7 +311,7 @@ fn main() {
             buffer.push(Xyz::with_wp(0.0, 0.0, 0.0));
         };
         let mut samples_done = 0;
-        let output_path = Path::new(output_str.as_str()).canonicalize().unwrap();
+        let output_path = Path::new(output_str.as_str());
         let output_dir = output_path.parent().unwrap();
         while let Ok(sample) = receiver.recv() {
             let mut samples_pending = vec![sample];

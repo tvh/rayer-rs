@@ -7,15 +7,15 @@ use num_traits::Float;
 use euclid::*;
 
 use ray::Ray;
-use material::*;
+use texture::*;
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug)]
 pub struct HitRecord<'a> {
     pub t: f32,
     pub p: Point3D<f32>,
     pub uv: Vector2D<f32>,
     pub normal: Vector3D<f32>,
-    pub material: &'a Material,
+    pub texture: &'a Texture,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]

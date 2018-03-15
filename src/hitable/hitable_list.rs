@@ -20,8 +20,8 @@ impl<'a> Hitable for HitableList<'a> {
             match obj.hit(r, t_min, closest_so_far) {
                 None => (),
                 Some(hit) => {
-                    closest_match = Some(hit);
                     closest_so_far = hit.t;
+                    closest_match = Some(hit);
                 }
             }
         }

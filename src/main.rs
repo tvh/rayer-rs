@@ -69,7 +69,8 @@ fn reflectance<H: Hitable>(r: ray::Ray, world: &H) -> f32 {
         let rec = world.hit(r, f32::sqrt(f32::epsilon()), f32::max_value());
         match rec {
             Some(rec) => {
-                let mat_res = rec.material.scatter(r, rec);
+                let mat = rec.texture.value(rec.uv);
+                let mat_res = mat.scatter(r, rec);
                 res += mat_res.emittance*attenuation_acc;
                 match mat_res.reflection {
                     None => { return res; },
@@ -103,9 +104,8 @@ pub struct Scene {
 fn just_earth() -> Scene {
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
     let texture: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
-    let material = Arc::new(Lambertian::new(&texture));
     let objects: Vec<Arc<Hitable>> = vec![
-        Arc::new(Sphere::new(point3(0.0, 0.0, 0.0), 1.0, material)),
+        Arc::new(Sphere::new(point3(0.0, 0.0, 0.0), 1.0, texture)),
     ];
 
     let look_from = Point3D::new(3.0, -1.0, -1.5);
@@ -118,10 +118,8 @@ fn just_earth() -> Scene {
 }
 
 fn three_spheres() -> Scene {
-    let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.1, 0.2, 0.5));
-    let mat1 = Arc::new(Lambertian::new(&color));
-    let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.8, 0.8, 0.0));
-    let mat2 = Arc::new(Lambertian::new(&color));
+    let mat1 = Arc::new(Lambertian::new(Rgb::with_wp(0.1, 0.2, 0.5)));
+    let mat2 = Arc::new(Lambertian::new(Rgb::with_wp(0.8, 0.8, 0.0)));
     let mat3 = Arc::new(Metal::new(Rgb::with_wp(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF66);
     let objects: Vec<Arc<Hitable>> = vec![
@@ -145,10 +143,8 @@ fn three_spheres() -> Scene {
 fn many_spheres() -> Scene {
     let glass = Arc::new(Dielectric::SF66);
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
-    let texture: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
-    let ground = Arc::new(Lambertian::new(&texture));
-    let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.4, 0.2, 0.1));
-    let sphere0_mat = Arc::new(Lambertian::new(&color));
+    let ground: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
+    let sphere0_mat = Arc::new(Lambertian::new(Rgb::with_wp(0.4, 0.2, 0.1)));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
     let mut objects: Vec<Arc<Hitable>> = vec![
         Arc::new(Triangle::new(
@@ -174,13 +170,13 @@ fn many_spheres() -> Scene {
             let center = point3(a as f32+0.9*next_f32(), 0.2, b as f32+0.9*next_f32());
             if (center - vec3(4.0, 0.2, 0.0)).to_vector().length() > 0.9 {
                 if choose_mat < 0.7 { // difuse
-                    let color: Arc<Texture> =
-                        Arc::new(Rgb::with_wp(
+                    let color =
+                        Rgb::with_wp(
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
                             next_f32()*next_f32(),
-                        ));
-                    let mat = Arc::new(Lambertian::new(&color));
+                        );
+                    let mat = Arc::new(Lambertian::new(color));
                     objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
                 } else if choose_mat < 0.85 { //metal
                     let color = Rgb::with_wp(

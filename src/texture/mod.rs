@@ -1,19 +1,25 @@
 use euclid::*;
 use palette;
-use color::*;
 use std::fmt::Debug;
 use image::*;
 use std::sync::Arc;
 use num_traits::ToPrimitive;
 use palette::white_point::E;
+use material::*;
 
 pub trait Texture: Debug + Send + Sync {
-    fn value(&self, uv: Vector2D<f32>, wl: f32) -> f32;
+    fn value(&self, uv: Vector2D<f32>) -> Box<Material>;
 }
 
-impl<C: HasReflectance> Texture for C {
-    fn value(&self, _uv: Vector2D<f32>, wl: f32) -> f32 {
-        self.reflect(wl)
+impl<'a, 'b> PartialEq<Texture+'b> for Texture+'a {
+    fn eq(&self, other: &(Texture+'b)) -> bool {
+        format!("{:?}", self) == format!("{:?}", other)
+    }
+}
+
+impl<M: Material+Clone+'static> Texture for M {
+    fn value(&self, _uv: Vector2D<f32>) -> Box<Material> {
+        Box::new(self.clone())
     }
 }
 
@@ -29,7 +35,7 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, uv: Vector2D<f32>, wl: f32) -> f32 {
+    fn value(&self, uv: Vector2D<f32>) -> Box<Material> {
         let nx = self.image.width();
         let ny = self.image.height();
         let i: isize = (uv.x*(nx as f32)).to_isize().unwrap();
@@ -42,6 +48,6 @@ impl Texture for ImageTexture {
             g as f32/255.0,
             b as f32/255.0,
         ).into();
-        rgbf.reflect(wl)
+        Box::new(Lambertian::new(rgbf))
     }
 }

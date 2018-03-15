@@ -1,14 +1,14 @@
 use euclid::*;
 use std::sync::Arc;
-use std::borrow::Borrow;
 
 use hitable::*;
+use texture::Texture;
 
 pub struct Triangle {
     vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
     normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
     uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
-    material: Arc<Material>,
+    texture: Arc<Texture>,
 }
 
 impl Triangle {
@@ -16,13 +16,13 @@ impl Triangle {
         vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
         normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
         uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
-        material: Arc<Material>,
+        texture: Arc<Texture>,
     ) -> Triangle {
         Triangle {
             vert,
             normal,
             uv,
-            material,
+            texture,
         }
     }
 }
@@ -83,6 +83,6 @@ impl Hitable for Triangle {
         let normal = (self.normal.0*v + self.normal.1*u + self.normal.2*w).normalize();
         let p = r.point_at_parameter(t);
         let uv = self.uv.0*v + self.uv.1*u + self.uv.2*w;
-        Some(HitRecord{p, t, normal, material: self.material.borrow(), uv})
+        Some(HitRecord{p, t, normal, texture: self.texture.as_ref(), uv})
     }
 }

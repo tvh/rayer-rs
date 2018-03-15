@@ -148,8 +148,8 @@ impl Hitable for BVH {
                             match go(first, r, t_min, t_max) {
                                 None => (),
                                 Some(hit) => {
-                                    closest_match = Some(hit);
                                     closest_so_far = hit.t;
+                                    closest_match = Some(hit);
                                 }
                             }
 
@@ -187,16 +187,16 @@ mod tests {
     use hitable::sphere::*;
     use pdqselect::select;
     use texture::*;
+    use material::*;
 
     fn bench_build(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());
-        let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
-        let material: Arc<Material> = Arc::new(Lambertian::new(&color));
+        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
             let radius = tmp/10.0/f32::cbrt(n as f32);
-            let sphere = Sphere::new(center, radius, material.clone());
+            let sphere = Sphere::new(center, radius, texture.clone());
             hitables.push(Arc::new(sphere));
         }
         bench.iter(|| BVH::initialize(hitables.as_slice()) );
@@ -210,13 +210,12 @@ mod tests {
 
     fn bench_intersect_bvh(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());
-        let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
-        let material: Arc<Material> = Arc::new(Lambertian::new(&color));
+        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
             let radius = tmp/10.0/f32::cbrt(n as f32);
-            let sphere = Sphere::new(center, radius, material.clone());
+            let sphere = Sphere::new(center, radius, texture.clone());
             hitables.push(Arc::new(sphere));
         }
         let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0));

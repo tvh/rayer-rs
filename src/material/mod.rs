@@ -1,12 +1,10 @@
 use std::fmt::Debug;
 use euclid::Vector3D;
-use std::sync::Arc;
 
 use color::HasReflectance;
 use ray::Ray;
 use hitable::*;
 use random::*;
-use texture::Texture;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct ScatterResult {
@@ -25,21 +23,21 @@ impl<'a, 'b> PartialEq<Material+'b> for Material+'a {
 }
 
 #[derive(Debug, Clone)]
-pub struct Lambertian {
-    albedo: Arc<Texture>
+pub struct Lambertian<C: HasReflectance> {
+    albedo: C
 }
 
-impl Lambertian {
-    pub fn new(albedo: &Arc<Texture>) -> Self {
-        Lambertian { albedo: albedo.clone() }
+impl<C: HasReflectance> Lambertian<C> {
+    pub fn new(albedo: C) -> Self {
+        Lambertian { albedo }
     }
 }
 
-impl Material for Lambertian {
+impl<C: HasReflectance> Material for Lambertian<C> {
     fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
         let direction = rec.normal + rand_in_unit_sphere();
         let ray = Ray::new(rec.p, direction, r_in.wl);
-        let attenuation = self.albedo.value(rec.uv, r_in.wl);
+        let attenuation = self.albedo.reflect(r_in.wl);
         ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
     }
 }

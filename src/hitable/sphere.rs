@@ -2,14 +2,14 @@ use euclid::*;
 use ray::Ray;
 use hitable::*;
 use std::sync::Arc;
-use std::borrow::Borrow;
 use num_traits::FloatConst;
+use texture::Texture;
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
     center: Point3D<f32>,
     radius: f32,
-    material: Arc<Material>,
+    texture: Arc<Texture>,
 }
 
 // This should not be necessary.
@@ -17,16 +17,16 @@ impl PartialEq for Sphere {
     fn eq(&self, other: &Self) -> bool {
         self.center == other.center &&
             self.radius == other.radius &&
-            &self.material == &other.material
+            &self.texture == &other.texture
     }
 }
 
 impl Sphere {
-    pub fn new(center: Point3D<f32>, radius: f32, material: Arc<Material>) -> Sphere {
+    pub fn new(center: Point3D<f32>, radius: f32, texture: Arc<Texture>) -> Sphere {
         Sphere{
             center,
             radius,
-            material
+            texture,
         }
     }
 }
@@ -61,7 +61,7 @@ impl Hitable for Sphere {
                 let u = 1.0 - (phi+f32::PI()) / (f32::PI()+f32::PI());
                 let v = (theta + f32::PI()*0.5) / f32::PI();
                 let uv = vec2(u, v);
-                return Some(HitRecord{normal, p, t, uv, material: self.material.borrow()});
+                return Some(HitRecord{normal, p, t, uv, texture: self.texture.as_ref()});
             }
         }
         None
@@ -72,13 +72,12 @@ impl Hitable for Sphere {
 mod tests {
     use super::*;
     use palette::*;
-    use texture::*;
+    use material::*;
 
     #[test]
     fn test_hit() {
-        let color: Arc<Texture> = Arc::new(Rgb::with_wp(0.5, 0.5, 0.5));
-        let material: Arc<Material> = Arc::new(Lambertian::new(&color));
-        let sphere = Sphere::new(point3(0.0, 0.0, 0.0), 1.0, material.clone());
+        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+        let sphere = Sphere::new(point3(0.0, 0.0, 0.0), 1.0, texture.clone());
         let ray = Ray::new(point3(-2.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
@@ -88,7 +87,7 @@ mod tests {
                 let p = point3(-1.0, 0.0, 0.0);
                 let normal = vec3(-1.0, 0.0, 0.0);
                 let uv = vec2(0.0, 0.5);
-                let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
+                let expected = HitRecord{t, p, normal, uv, texture: texture.as_ref()};
                 assert_eq!(expected, hit);
             }
         }
@@ -101,7 +100,7 @@ mod tests {
                 let p = point3(1.0, 0.0, 0.0);
                 let normal = vec3(1.0, 0.0, 0.0);
                 let uv = vec2(0.5, 0.5);
-                let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
+                let expected = HitRecord{t, p, normal, uv, texture: texture.as_ref()};
                 assert_eq!(expected, hit);
             }
         }
@@ -114,7 +113,7 @@ mod tests {
                 let p = point3(0.0, 1.0, 0.0);
                 let normal = vec3(0.0, 1.0, 0.0);
                 let uv = vec2(0.5, 1.0);
-                let expected = HitRecord{t, p, normal, uv, material: material.borrow()};
+                let expected = HitRecord{t, p, normal, uv, texture: texture.as_ref()};
                 assert_eq!(expected, hit);
             }
         }

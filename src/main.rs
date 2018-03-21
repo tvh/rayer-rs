@@ -213,7 +213,8 @@ fn simple_light() -> Scene {
     let glass = Arc::new(Dielectric::SF66);
     let ground = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
     let light = Arc::new(light::DiffuseLight::new(Rgb::with_wp(5.0, 5.0, 5.0)));
-    let sphere0_mat = Arc::new(Lambertian::new(Rgb::with_wp(0.4, 0.2, 0.1)));
+    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
+    let sphere0_mat: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
     let objects: Vec<Arc<Hitable>> = vec![
         Arc::new(Triangle::new(
@@ -229,16 +230,16 @@ fn simple_light() -> Scene {
             ground,
         )),
         Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass.clone())),
-        Arc::new(Sphere::new(point3(0.0, 1.2, 0.0), -0.70, glass.clone())),
-        Arc::new(Sphere::new(point3(-4.0, 1.0, 0.0), 1.0, sphere0_mat)),
-        Arc::new(Sphere::new(point3(4.0, 1.0, 0.0), 1.0, sphere1_mat)),
+        Arc::new(Sphere::new(point3(0.0, 1.3, 0.0), -0.70, glass.clone())),
+        Arc::new(Sphere::new(point3(-3.0, 1.0, 0.0), 1.0, sphere0_mat)),
+        Arc::new(Sphere::new(point3(3.0, 1.0, 0.0), 1.0, sphere1_mat)),
         Arc::new(Sphere::new(point3(0.0, 6.0, 2.0), 2.0, light.clone())),
     ];
 
     let look_from = Point3D::new(0.0, 2.0, -10.0);
-    let look_at = Point3D::new(0.0, 0.0, 0.0);
+    let look_at = Point3D::new(0.0, 1.0, 0.0);
     let aperture = 0.1;
-    let vfov = 40.0;
+    let vfov = 30.0;
     let focus_dist = 10.0;
     let render_sky = false;
 

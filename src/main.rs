@@ -177,7 +177,8 @@ fn many_spheres() -> Scene {
                             next_f32()*next_f32(),
                         );
                     let mat = Arc::new(Lambertian::new(color));
-                    objects.push(Arc::new(Sphere::new(center, 0.2, mat)));
+                    let center1 = center + vec3(0.0, 0.5*next_f32(), 0.0);
+                    objects.push(Arc::new(Sphere::new_moving(center, center1, 0.0, 1.0, 0.2, mat)));
                 } else if choose_mat < 0.95 { //metal
                     let color = Rgb::with_wp(
                         0.5*(1.0+next_f32()),

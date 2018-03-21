@@ -7,7 +7,10 @@ use texture::Texture;
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
-    center: Point3D<f32>,
+    center0: Point3D<f32>,
+    center1: Point3D<f32>,
+    t0: f32,
+    t1: f32,
     radius: f32,
     texture: Arc<Texture>,
 }
@@ -15,16 +18,33 @@ pub struct Sphere {
 // This should not be necessary.
 impl PartialEq for Sphere {
     fn eq(&self, other: &Self) -> bool {
-        self.center == other.center &&
-            self.radius == other.radius &&
-            &self.texture == &other.texture
+        self.center0 == other.center0 &&
+        self.center1 == other.center1 &&
+        self.t0 == other.t0 &&
+        self.t1 == other.t1 &&
+        self.radius == other.radius &&
+        &self.texture == &other.texture
     }
 }
 
 impl Sphere {
     pub fn new(center: Point3D<f32>, radius: f32, texture: Arc<Texture>) -> Sphere {
         Sphere{
-            center,
+            center0: center,
+            center1: center,
+            t0: 0.0,
+            t1: 1.0,
+            radius,
+            texture,
+        }
+    }
+
+    pub fn new_moving(center0: Point3D<f32>, center1: Point3D<f32>, t0: f32, t1: f32, radius: f32, texture: Arc<Texture>) -> Sphere {
+        Sphere{
+            center0,
+            center1,
+            t0,
+            t1,
             radius,
             texture,
         }
@@ -33,17 +53,22 @@ impl Sphere {
 
 impl Hitable for Sphere {
     fn centroid(&self) -> Point3D<f32> {
-        self.center
+        (self.center0+self.center1.to_vector())*0.5
     }
     fn bbox(&self) -> AABB {
         let abs_radius = self.radius.abs();
         let diff = vec3(abs_radius, abs_radius, abs_radius);
-        AABB {
-            bounds: [self.center-diff, self.center+diff]
-        }
+        let bounds0 = AABB {
+            bounds: [self.center0-diff, self.center0+diff]
+        };
+        let bounds1 = AABB {
+            bounds: [self.center1-diff, self.center1+diff]
+        };
+        bounds0.merge(bounds1)
     }
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let oc = r.origin - self.center;
+        let center = self.center0 + (self.center1 - self.center0) * ((r.ti-self.t0) / (self.t1-self.t0));
+        let oc = r.origin - center;
         let a = r.direction.dot(r.direction);
         let b = oc.dot(r.direction);
         let c = oc.dot(oc) - self.radius*self.radius;
@@ -55,7 +80,7 @@ impl Hitable for Sphere {
             }
             if t < t_max && t > t_min {
                 let p = r.point_at_parameter(t);
-                let normal = (p-self.center) / self.radius;
+                let normal = (p-center) / self.radius;
                 let phi = f32::atan2(normal.z, normal.x);
                 let theta = f32::asin(normal.y);
                 let u = 1.0 - (phi+f32::PI()) / (f32::PI()+f32::PI());

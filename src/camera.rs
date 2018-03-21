@@ -10,10 +10,12 @@ pub struct Camera {
     u: Vector3D<f32>,
     v: Vector3D<f32>,
     lens_radius: f32,
+    t0: f32,
+    t1: f32,
 }
 
 impl Camera {
-    pub fn new(look_from: Point3D<f32>, look_at: Point3D<f32>, up: Vector3D<f32>, vfov: f32, aspect: f32, aperture: f32, focus_dist: f32) -> Self {
+    pub fn new(look_from: Point3D<f32>, look_at: Point3D<f32>, up: Vector3D<f32>, vfov: f32, aspect: f32, aperture: f32, focus_dist: f32, t0: f32, t1: f32) -> Self {
         let lens_radius = aperture*0.5;
         let theta = vfov.to_radians();
         let half_height = f32::tan(theta*0.5);
@@ -32,6 +34,7 @@ impl Camera {
             origin,
             u, v,
             lens_radius,
+            t0, t1,
         }
     }
 }
@@ -39,7 +42,8 @@ impl Camera {
 impl Camera {
     pub fn get_ray(&self, s: f32, t: f32, wl: f32) -> Ray {
         let rd = rand_in_unit_disk()*self.lens_radius;
+        let ti = gen_range(self.t0, self.t1);
         let offset = self.u*rd.x + self.v*rd.y;
-        Ray::new(self.origin + offset, self.lower_left_corner + self.horizontal*s + self.vertical*t - offset, wl, 0.0)
+        Ray::new(self.origin + offset, self.lower_left_corner + self.horizontal*s + self.vertical*t - offset, wl, ti)
     }
 }

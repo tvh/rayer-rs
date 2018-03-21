@@ -298,7 +298,7 @@ fn main() {
     let world = BVH::initialize(objects.as_mut_slice());
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
-    let cam = camera::Camera::new(look_from, look_at, up, vfov, width as f32/height as f32, aperture, focus_dist);
+    let cam = camera::Camera::new(look_from, look_at, up, vfov, width as f32/height as f32, aperture, focus_dist, 0.0, 1.0);
 
     let wl_low = 390.0;
     let wl_high = 700.0;

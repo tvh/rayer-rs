@@ -228,10 +228,11 @@ fn simple_light() -> Scene {
             (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
             ground,
         )),
-        Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass)),
+        Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass.clone())),
+        Arc::new(Sphere::new(point3(0.0, 1.2, 0.0), -0.70, glass.clone())),
         Arc::new(Sphere::new(point3(-4.0, 1.0, 0.0), 1.0, sphere0_mat)),
         Arc::new(Sphere::new(point3(4.0, 1.0, 0.0), 1.0, sphere1_mat)),
-        Arc::new(Sphere::new(point3(0.0, 6.0, 2.0), 2.0, light)),
+        Arc::new(Sphere::new(point3(0.0, 6.0, 2.0), 2.0, light.clone())),
     ];
 
     let look_from = Point3D::new(0.0, 2.0, -10.0);

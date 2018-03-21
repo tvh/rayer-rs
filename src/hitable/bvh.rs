@@ -218,7 +218,7 @@ mod tests {
             let sphere = Sphere::new(center, radius, texture.clone());
             hitables.push(Arc::new(sphere));
         }
-        let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0));
+        let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0, 0.0));
         let bvh = BVH::initialize(hitables.as_slice());
         bench.iter(|| bvh.hit(ray, f32::epsilon(), f32::max_value()) );
     }

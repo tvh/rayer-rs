@@ -78,7 +78,7 @@ mod tests {
     fn test_hit() {
         let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         let sphere = Sphere::new(point3(0.0, 0.0, 0.0), 1.0, texture.clone());
-        let ray = Ray::new(point3(-2.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0);
+        let ray = Ray::new(point3(-2.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
             None => panic!("Expected a hit"),
@@ -91,7 +91,7 @@ mod tests {
                 assert_eq!(expected, hit);
             }
         }
-        let ray = Ray::new(point3(1.5, 0.0, 0.0), vec3(-1.0, 0.0, 0.0), 500.0);
+        let ray = Ray::new(point3(1.5, 0.0, 0.0), vec3(-1.0, 0.0, 0.0), 500.0, 0.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
             None => panic!("Expected a hit"),
@@ -104,7 +104,7 @@ mod tests {
                 assert_eq!(expected, hit);
             }
         }
-        let ray = Ray::new(point3(0.0, 3.0, 0.0), vec3(0.0, -1.0, 0.0), 500.0);
+        let ray = Ray::new(point3(0.0, 3.0, 0.0), vec3(0.0, -1.0, 0.0), 500.0, 0.0);
         let res = sphere.hit(ray, 0.0, 1000.0);
         match res {
             None => panic!("Expected a hit"),

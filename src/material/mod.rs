@@ -36,7 +36,7 @@ impl<C: HasReflectance> Lambertian<C> {
 impl<C: HasReflectance> Material for Lambertian<C> {
     fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
         let direction = rec.normal + rand_in_unit_sphere();
-        let ray = Ray::new(rec.p, direction, r_in.wl);
+        let ray = Ray::new(rec.p, direction, r_in.wl, r_in.ti);
         let attenuation = self.albedo.reflect(r_in.wl);
         ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
     }
@@ -65,7 +65,7 @@ impl<R: HasReflectance> Material for Metal<R> {
     fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> ScatterResult {
         let reflected = reflect(r_in.direction, hit_record.normal);
         let scattered =  reflected + rand_in_unit_sphere()*self.fuzz;
-        let ray = Ray::new(hit_record.p, scattered, r_in.wl);
+        let ray = Ray::new(hit_record.p, scattered, r_in.wl, r_in.ti);
         let attenuation = self.albedo.reflect(r_in.wl);
         ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
     }
@@ -163,14 +163,14 @@ impl Material for Dielectric {
         let scattered = match refracted {
             None => {
                 let reflected = reflect(r_in.direction, rec.normal);
-                Ray::new(rec.p, reflected, r_in.wl)
+                Ray::new(rec.p, reflected, r_in.wl, r_in.ti)
             },
             Some(refracted) => {
                 if next_f32() < schlick(cosine, ref_idx) {
                     let reflected = reflect(r_in.direction, rec.normal);
-                    Ray::new(rec.p, reflected, r_in.wl)
+                    Ray::new(rec.p, reflected, r_in.wl, r_in.ti)
                 } else {
-                    Ray::new(rec.p, refracted, r_in.wl)
+                    Ray::new(rec.p, refracted, r_in.wl, r_in.ti)
                 }
             }
         };

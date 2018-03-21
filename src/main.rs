@@ -56,12 +56,12 @@ use material::*;
 use random::*;
 use texture::Texture;
 
-fn color<H: Hitable>(r: ray::Ray, world: &H) -> Xyz<E, f32> {
-    let refl = reflectance(r, world);
+fn color<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool) -> Xyz<E, f32> {
+    let refl = reflectance(r, world, render_sky);
     color::xyz_from_wavelength(r.wl) * refl
 }
 
-fn reflectance<H: Hitable>(r: ray::Ray, world: &H) -> f32 {
+fn reflectance<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool) -> f32 {
     let mut r = r;
     let mut res = 0.0;
     let mut attenuation_acc = 1.0;
@@ -81,10 +81,12 @@ fn reflectance<H: Hitable>(r: ray::Ray, world: &H) -> f32 {
                 }
             },
             None => {
-                let unit_direction = r.direction.normalize();
-                let t: f32 = (unit_direction.y + 1.0)*0.5;
-                let rgb = Rgb::with_wp(1.0, 1.0, 1.0)*(1.0-t) + Rgb::with_wp(0.5, 0.7, 1.0)*t;
-                res += rgb.reflect(r.wl)*attenuation_acc;
+                if render_sky {
+                    let unit_direction = r.direction.normalize();
+                    let t: f32 = (unit_direction.y + 1.0)*0.5;
+                    let rgb = Rgb::with_wp(1.0, 1.0, 1.0)*(1.0-t) + Rgb::with_wp(0.5, 0.7, 1.0)*t;
+                    res += rgb.reflect(r.wl)*attenuation_acc;
+                }
                 return res;
             }
         }
@@ -99,6 +101,7 @@ pub struct Scene {
     focus_dist: f32,
     aperture: f32,
     vfov: f32,
+    render_sky: bool,
 }
 
 fn just_earth() -> Scene {
@@ -113,8 +116,9 @@ fn just_earth() -> Scene {
     let aperture = 0.0;
     let vfov = 35.0;
     let focus_dist = (look_from-look_at).length();
+    let render_sky = true;
 
-    Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
 }
 
 fn three_spheres() -> Scene {
@@ -136,8 +140,9 @@ fn three_spheres() -> Scene {
     let aperture = 0.1;
     let vfov = 15.0;
     let focus_dist = (look_from-look_at).length();
+    let render_sky = true;
 
-    Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
 }
 
 fn many_spheres() -> Scene {
@@ -199,8 +204,44 @@ fn many_spheres() -> Scene {
     let aperture = 0.1;
     let vfov = 30.0;
     let focus_dist = 10.0;
+    let render_sky = true;
 
-    Scene { objects, look_from, look_at, aperture, vfov, focus_dist }
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
+}
+
+fn simple_light() -> Scene {
+    let glass = Arc::new(Dielectric::SF66);
+    let ground = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+    let light = Arc::new(light::DiffuseLight::new(Rgb::with_wp(5.0, 5.0, 5.0)));
+    let sphere0_mat = Arc::new(Lambertian::new(Rgb::with_wp(0.4, 0.2, 0.1)));
+    let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
+    let objects: Vec<Arc<Hitable>> = vec![
+        Arc::new(Triangle::new(
+            (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
+            (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            ground.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(-20.0, 0.0, -30.0), point3(20.0, 0.0, -30.0), point3(20.0, 0.0, 30.0)),
+            (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            ground,
+        )),
+        Arc::new(Sphere::new(point3(0.0, 1.0, 0.0), 1.0, glass)),
+        Arc::new(Sphere::new(point3(-4.0, 1.0, 0.0), 1.0, sphere0_mat)),
+        Arc::new(Sphere::new(point3(4.0, 1.0, 0.0), 1.0, sphere1_mat)),
+        Arc::new(Sphere::new(point3(0.0, 6.0, 2.0), 2.0, light)),
+    ];
+
+    let look_from = Point3D::new(0.0, 2.0, -10.0);
+    let look_at = Point3D::new(0.0, 0.0, 0.0);
+    let aperture = 0.1;
+    let vfov = 40.0;
+    let focus_dist = 10.0;
+    let render_sky = false;
+
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
 }
 
 lazy_static! {
@@ -209,6 +250,7 @@ lazy_static! {
         scenes.insert("just_earth", just_earth);
         scenes.insert("three_spheres", three_spheres);
         scenes.insert("many_spheres", many_spheres);
+        scenes.insert("simple_light", simple_light);
         scenes
     };
 }
@@ -295,7 +337,7 @@ fn main() {
     };
     let num_samples = u64::from_str(matches.value_of("samples").unwrap()).unwrap();
 
-    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist } = get_scene();
+    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist, render_sky } = get_scene();
     let world = BVH::initialize(objects.as_mut_slice());
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
@@ -362,7 +404,7 @@ fn main() {
                     let u = ((i as f32) + next_f32()) / (width as f32);
                     let v = ((j as f32) + next_f32()) / (height as f32);
                     let r = cam.get_ray(u, v, wl);
-                    color(r, &world)*3.0
+                    color(r, &world, render_sky)*3.0
                 }).collect();
             sender.send(sample).unwrap();
         }).collect();

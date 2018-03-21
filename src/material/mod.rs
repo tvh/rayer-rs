@@ -1,6 +1,8 @@
 use std::fmt::Debug;
 use euclid::Vector3D;
 
+pub mod light;
+
 use color::HasReflectance;
 use ray::Ray;
 use hitable::*;

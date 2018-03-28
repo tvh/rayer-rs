@@ -102,21 +102,29 @@ impl Mesh {
     ) -> Result<Mesh, Error> {
         let obj: Obj<'_, SimplePolygon> = Obj::load(path)?;
         let mut triangles: Vec<Arc<Hitable>> = Vec::new();
+        let get_normal = |i| Vector3D::from(obj.normal[i]);
 
-        for o in obj.objects {
-            for g in o.groups {
-                for p in g.polys {
+        for o in obj.objects.iter() {
+            for g in o.groups.iter() {
+                for p in g.polys.iter() {
                     let p0 = p[0];
                     let vert0 = obj.position[p0.0].into();
-                    let normal0 = obj.normal[p0.2.unwrap()].into();
-                    let uv0 = obj.texture[p0.1.unwrap()].into();
                     for (p1, p2) in p[1..p.len()-1].iter().zip(p[2..].iter()) {
                         let vert1 = obj.position[p1.0].into();
-                        let normal1 = obj.normal[p1.2.unwrap()].into();
-                        let uv1 = obj.texture[p1.1.unwrap()].into();
                         let vert2 = obj.position[p2.0].into();
-                        let normal2 = obj.normal[p2.2.unwrap()].into();
-                        let uv2 = obj.texture[p2.1.unwrap()].into();
+
+                        let v: Vector3D<f32> = vert1-vert0;
+                        let w: Vector3D<f32> = vert2-vert0;
+                        let default_normal = v.cross(w);
+
+                        let normal0 = p0.2.map_or(default_normal, &get_normal);
+                        let normal1 = p1.2.map_or(default_normal, &get_normal);
+                        let normal2 = p2.2.map_or(default_normal, &get_normal);
+
+                        let uv0 = p0.1.map_or(vec2(0.0, 0.0), |i| obj.texture[i].into());
+                        let uv1 = p1.1.map_or(vec2(0.0, 0.0), |i| obj.texture[i].into());
+                        let uv2 = p2.1.map_or(vec2(0.0, 0.0), |i| obj.texture[i].into());
+
                         triangles.push(Arc::new(Triangle::new(
                             (vert0, vert1, vert2),
                             (normal0, normal1, normal2),

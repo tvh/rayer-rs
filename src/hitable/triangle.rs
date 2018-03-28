@@ -140,6 +140,15 @@ impl Mesh {
     }
 }
 
+impl Hitable for Mesh {
+    fn bbox(&self) -> AABB {
+        self.data.bbox()
+    }
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.data.hit(r, t_min, t_max)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

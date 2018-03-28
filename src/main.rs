@@ -248,6 +248,38 @@ fn simple_light() -> Scene {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
 }
 
+fn bunny() -> Scene {
+    let light = Arc::new(light::DiffuseLight::new(Rgb::with_wp(5.0, 5.0, 5.0)));
+    let ground = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+    let bunny0_mat = Arc::new(Dielectric::SF66);
+    let bunny0 = Mesh::from_obj(Path::new("data/bunny.obj"), bunny0_mat).unwrap();
+    let objects: Vec<Arc<Hitable>> = vec![
+        Arc::new(Triangle::new(
+            (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
+            (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            ground.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(-20.0, 0.0, -30.0), point3(20.0, 0.0, -30.0), point3(20.0, 0.0, 30.0)),
+            (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            ground,
+        )),
+        Arc::new(bunny0),
+        Arc::new(Sphere::new(point3(0.0, 6.0, -2.0), 2.0, light.clone())),
+    ];
+
+    let look_from = Point3D::new(0.0, 2.0, 10.0);
+    let look_at = Point3D::new(0.0, 1.0, 0.0);
+    let aperture = 0.1;
+    let vfov = 30.0;
+    let focus_dist = 10.0;
+    let render_sky = false;
+
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
+}
+
 lazy_static! {
     static ref SCENES: HashMap<&'static str, fn() -> Scene> = {
         let mut scenes: HashMap<_, fn() -> Scene> = HashMap::new();
@@ -255,6 +287,7 @@ lazy_static! {
         scenes.insert("three_spheres", three_spheres);
         scenes.insert("many_spheres", many_spheres);
         scenes.insert("simple_light", simple_light);
+        scenes.insert("bunny", bunny);
         scenes
     };
 }

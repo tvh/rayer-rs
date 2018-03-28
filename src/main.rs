@@ -3,6 +3,7 @@
 #![feature(plugin)]
 #![feature(slice_patterns)]
 #![feature(test)]
+#![feature(underscore_lifetimes)]
 #![plugin(quickcheck_macros)]
 extern crate core;
 extern crate clap;
@@ -14,6 +15,7 @@ extern crate euclid;
 extern crate lazy_static;
 extern crate image;
 extern crate num_traits;
+extern crate obj;
 extern crate palette;
 extern crate pbr;
 extern crate pdqselect;

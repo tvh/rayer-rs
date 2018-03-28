@@ -1,7 +1,11 @@
 use euclid::*;
 use std::sync::Arc;
+use std::path::Path;
+use std::io::Error;
+use obj::*;
 
 use hitable::*;
+use hitable::bvh::BVH;
 use texture::Texture;
 
 pub struct Triangle {
@@ -84,5 +88,61 @@ impl Hitable for Triangle {
         let p = r.point_at_parameter(t);
         let uv = self.uv.0*v + self.uv.1*u + self.uv.2*w;
         Some(HitRecord{p, t, normal, texture: self.texture.as_ref(), uv})
+    }
+}
+
+pub struct Mesh {
+    data: BVH
+}
+
+impl Mesh {
+    pub fn from_obj(
+        path: &Path,
+        texture: Arc<Texture>
+    ) -> Result<Mesh, Error> {
+        let obj: Obj<'_, SimplePolygon> = Obj::load(path)?;
+        let mut triangles: Vec<Arc<Hitable>> = Vec::new();
+
+        for o in obj.objects {
+            for g in o.groups {
+                for p in g.polys {
+                    let p0 = p[0];
+                    let vert0 = obj.position[p0.0].into();
+                    let normal0 = obj.normal[p0.2.unwrap()].into();
+                    let uv0 = obj.texture[p0.1.unwrap()].into();
+                    for (p1, p2) in p[1..p.len()-1].iter().zip(p[2..].iter()) {
+                        let vert1 = obj.position[p1.0].into();
+                        let normal1 = obj.normal[p1.2.unwrap()].into();
+                        let uv1 = obj.texture[p1.1.unwrap()].into();
+                        let vert2 = obj.position[p2.0].into();
+                        let normal2 = obj.normal[p2.2.unwrap()].into();
+                        let uv2 = obj.texture[p2.1.unwrap()].into();
+                        triangles.push(Arc::new(Triangle::new(
+                            (vert0, vert1, vert2),
+                            (normal0, normal1, normal2),
+                            (uv0, uv1, uv2),
+                            texture.clone(),
+                        )))
+                    }
+                }
+            }
+        }
+
+        Ok(Mesh{ data: BVH::initialize(triangles.as_slice()) })
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use palette::*;
+    use material::*;
+    use std::path::Path;
+
+    #[test]
+    fn test_load_mesh() {
+        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+        Mesh::from_obj(Path::new("data/bunny.obj"), texture);
     }
 }

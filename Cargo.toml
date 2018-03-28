@@ -15,6 +15,7 @@ euclid = "0.16.4"
 image = "0.18.0"
 lazy_static = "1.0"
 num-traits = "0.1.42"
+obj = "0.8.2"
 palette = { git = "https://github.com/Ogeon/palette.git", rev = "c5114e5" }
 pbr = "1.0.0"
 pdqselect = "0.1.0"

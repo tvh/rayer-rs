@@ -4,22 +4,22 @@ use std::sync::Arc;
 use decorum::Ordered;
 use std::ptr;
 
-pub struct BVH {
-    nodes: Vec<Node>
+pub struct BVH<H: Hitable> {
+    nodes: Vec<Node<H>>
 }
 
-enum Node {
+enum Node<H: Hitable> {
     Bin {
         left_length: usize,
         bbox: AABB,
     },
     Tip {
-        hitable: Arc<Hitable>,
+        hitable: H,
         bbox: AABB,
     },
 }
 
-impl Node {
+impl<H: Hitable> Node<H> {
     fn bbox(&self) -> AABB {
         match self {
             &Node::Bin{bbox, ..} => bbox,
@@ -28,13 +28,13 @@ impl Node {
     }
 }
 
-impl BVH {
-    pub fn initialize(items: &[Arc<Hitable>]) -> BVH {
+impl<H: Hitable+Clone> BVH<H> {
+    pub fn initialize(items: &[H]) -> BVH<H> {
         #[derive(Clone, Copy)]
         enum Axis {
             X, Y, Z
         }
-        fn go(items: &mut [(Point3D<f32>, Arc<Hitable>)], res: &mut Vec<Node>) -> (AABB, usize) {
+        fn go<H: Hitable + Clone>(items: &mut [(Point3D<f32>, H)], res: &mut Vec<Node<H>>) -> (AABB, usize) {
             match items {
                 &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
@@ -103,14 +103,14 @@ impl BVH {
             };
             (bbox, 1+left_length+right_length)
         }
-        let mut items: Vec<_> = items.iter().map(|x| (x.centroid(), x.clone()) ).collect();
-        let mut nodes = Vec::with_capacity(items.len()*2-1);
+        let mut items: Vec<(Point3D<f32>, H)> = items.iter().map(|x| (x.centroid(), x.clone()) ).collect();
+        let mut nodes: Vec<Node<H>> = Vec::with_capacity(items.len()*2-1);
         go(items.as_mut_slice(), &mut nodes);
         BVH { nodes }
     }
 }
 
-impl Hitable for BVH {
+impl<H: Hitable> Hitable for BVH<H> {
     fn bbox(&self) -> AABB {
         let &BVH { ref nodes } = self;
         match nodes.as_slice() {
@@ -122,7 +122,7 @@ impl Hitable for BVH {
 
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let &BVH { ref nodes } = self;
-        fn go(nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        fn go<H: Hitable>(nodes: &[Node<H>], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
             match nodes {
                 &[] => None,
                 &[Node::Bin {left_length, ..}, ref left..] => {
@@ -209,14 +209,14 @@ mod tests {
     }
 
     fn bench_intersect_bvh(bench: &mut Bencher, n: u64) {
-        let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());
+        let mut hitables: Vec<Sphere> = black_box(Vec::new());
         let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
             let radius = tmp/10.0/f32::cbrt(n as f32);
             let sphere = Sphere::new(center, radius, texture.clone());
-            hitables.push(Arc::new(sphere));
+            hitables.push(sphere);
         }
         let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0, 0.0));
         let bvh = BVH::initialize(hitables.as_slice());

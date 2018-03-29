@@ -105,6 +105,18 @@ pub trait Hitable: Send + Sync {
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
+impl<T: AsRef<Hitable> + Sync + Send> Hitable for T {
+    fn centroid(&self) -> Point3D<f32> {
+         self.as_ref().centroid()
+    }
+    fn bbox(&self) -> AABB {
+        self.as_ref().bbox()
+    }
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        self.as_ref().hit(r, t_min, t_max)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

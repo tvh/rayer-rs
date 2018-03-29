@@ -8,6 +8,7 @@ use hitable::*;
 use hitable::bvh::BVH;
 use texture::Texture;
 
+#[derive(Debug, Clone)]
 pub struct Triangle {
     vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
     normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
@@ -92,7 +93,7 @@ impl Hitable for Triangle {
 }
 
 pub struct Mesh {
-    data: BVH
+    data: BVH<Triangle>
 }
 
 impl Mesh {
@@ -101,7 +102,7 @@ impl Mesh {
         texture: Arc<Texture>
     ) -> Result<Mesh, Error> {
         let obj: Obj<'_, SimplePolygon> = Obj::load(path)?;
-        let mut triangles: Vec<Arc<Hitable>> = Vec::new();
+        let mut triangles: Vec<Triangle> = Vec::new();
         let get_normal = |i| Vector3D::from(obj.normal[i]);
 
         for o in obj.objects.iter() {
@@ -125,12 +126,12 @@ impl Mesh {
                         let uv1 = p1.1.map_or(vec2(0.0, 0.0), |i| obj.texture[i].into());
                         let uv2 = p2.1.map_or(vec2(0.0, 0.0), |i| obj.texture[i].into());
 
-                        triangles.push(Arc::new(Triangle::new(
+                        triangles.push(Triangle::new(
                             (vert0, vert1, vert2),
                             (normal0, normal1, normal2),
                             (uv0, uv1, uv2),
                             texture.clone(),
-                        )))
+                        ));
                     }
                 }
             }

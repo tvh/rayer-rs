@@ -281,6 +281,101 @@ fn bunny() -> Scene {
     Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
 }
 
+fn cornell() -> Scene {
+    let red = Arc::new(Lambertian::new(Rgb::with_wp(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(Rgb::with_wp(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(Rgb::with_wp(0.12, 0.45, 0.15)));
+    let light = Arc::new(light::DiffuseLight::new(Rgb::with_wp(15.0, 15.0, 15.0)));
+    let up = vec3(0.0, 1.0, 0.0);
+    let down = vec3(0.0, -1.0, 0.0);
+    let right = vec3(1.0, 0.0, 0.0);
+    let left = vec3(-1.0, 0.0, 0.0);
+    let out = vec3(0.0, 0.0, -1.0);
+    let objects: Vec<Arc<Hitable>> = vec![
+        Arc::new(Triangle::new(
+            (point3(213.0, 554.0, 227.0), point3(213.0, 554.0, 332.0), point3(343.0, 554.0, 332.0)),
+            (down, down, down),
+            (vec2(0.0, 227.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            light.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(213.0, 554.0, 227.0), point3(343.0, 554.0, 227.0), point3(343.0, 554.0, 332.0)),
+            (down, down, down),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            light,
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 0.0, 0.0), point3(0.0, 0.0, 555.0), point3(555.0, 0.0, 555.0)),
+            (up, up, up),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            white.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 0.0, 0.0), point3(555.0, 0.0, 0.0), point3(555.0, 0.0, 555.0)),
+            (up, up, up),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            white.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 555.0, 0.0), point3(0.0, 555.0, 555.0), point3(555.0, 555.0, 555.0)),
+            (down, down, down),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            white.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 555.0, 0.0), point3(555.0, 555.0, 0.0), point3(555.0, 555.0, 555.0)),
+            (down, down, down),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            white.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 0.0, 555.0), point3(0.0, 555.0, 555.0), point3(555.0, 555.0, 555.0)),
+            (out, out, out),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            white.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 0.0, 555.0), point3(555.0, 0.0, 555.0), point3(555.0, 555.0, 555.0)),
+            (out, out, out),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            white.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 0.0, 0.0), point3(0.0, 0.0, 555.0), point3(0.0, 555.0, 555.0)),
+            (right, right, right),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            red.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(0.0, 0.0, 0.0), point3(0.0, 555.0, 0.0), point3(0.0, 555.0, 555.0)),
+            (right, right, right),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            red
+        )),
+        Arc::new(Triangle::new(
+            (point3(555.0, 0.0, 0.0), point3(555.0, 0.0, 555.0), point3(555.0, 555.0, 555.0)),
+            (left, left, left),
+            (vec2(0.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0)),
+            green.clone(),
+        )),
+        Arc::new(Triangle::new(
+            (point3(555.0, 0.0, 0.0), point3(555.0, 555.0, 0.0), point3(555.0, 555.0, 555.0)),
+            (left, left, left),
+            (vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0)),
+            green
+        )),
+    ];
+
+    let look_from = Point3D::new(278.0, 278.0, -800.0);
+    let look_at = Point3D::new(278.0, 278.0, 0.0);
+    let aperture = 0.0;
+    let vfov = 40.0;
+    let focus_dist = 10.0;
+    let render_sky = false;
+
+    Scene { objects, look_from, look_at, aperture, vfov, focus_dist, render_sky }
+}
+
 lazy_static! {
     static ref SCENES: HashMap<&'static str, fn() -> Scene> = {
         let mut scenes: HashMap<_, fn() -> Scene> = HashMap::new();
@@ -289,6 +384,7 @@ lazy_static! {
         scenes.insert("many_spheres", many_spheres);
         scenes.insert("simple_light", simple_light);
         scenes.insert("bunny", bunny);
+        scenes.insert("cornell", cornell);
         scenes
     };
 }

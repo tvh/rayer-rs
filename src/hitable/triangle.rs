@@ -160,6 +160,6 @@ mod tests {
     #[test]
     fn test_load_mesh() {
         let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
-        Mesh::from_obj(Path::new("data/bunny.obj"), texture);
+        Mesh::from_obj(Path::new("data/bunny.obj"), texture).unwrap();
     }
 }

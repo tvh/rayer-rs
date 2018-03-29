@@ -28,6 +28,7 @@ extern crate test;
 use clap::{Arg, App};
 use crossbeam_channel::{unbounded, Sender};
 use euclid::*;
+use image::hdr::*;
 use num_traits::Float;
 use palette::*;
 use palette::pixel::Srgb;
@@ -339,6 +340,7 @@ fn main() {
         Some("png") => image::PNG,
         Some("jpg") => image::JPEG,
         Some("jpeg") => image::JPEG,
+        Some("hdr") => image::ImageFormat::HDR,
         Some(ext) => panic!("Unknown extension: {:?}", ext),
     };
     let output_str = String::from(output.to_str().unwrap());
@@ -409,8 +411,15 @@ fn main() {
 
             let get_pixel = |x, y| {
                 let col = buffer[(y*width+x) as usize];
-                let col = (col.into_rgb()/(samples_done as f32)).clamp();
-                let col = Srgb::from(col);
+                col.into_rgb()/(samples_done as f32)
+            };
+            let get_pixel_hdr = |x, y| {
+                let col = get_pixel(x, y);
+                image::Rgb([col.red, col.green, col.blue])
+            };
+            let get_pixel_ldr = |x, y| {
+                let col = get_pixel(x, y);
+                let col = Srgb::from(col.clamp());
                 let pixel =
                     [(col.red*255.99) as u8
                     ,(col.green*255.99) as u8
@@ -418,9 +427,23 @@ fn main() {
                     ];
                 image::Rgb(pixel)
             };
-            let buffer = image::ImageBuffer::from_fn(width, height, get_pixel);
+
             let mut fout = tempfile::NamedTempFile::new_in(output_dir).unwrap();
-            image::ImageRgb8(buffer).save(&mut fout, format).unwrap();
+
+            match format {
+                image::ImageFormat::HDR => {
+                    let buffer: Vec<_> =
+                        (0..(width*height))
+                        .map(|n| get_pixel_hdr(n%width, n/width))
+                        .collect();
+                    let encoder = HDREncoder::new(&fout);
+                    encoder.encode(buffer.as_slice(), width as usize, height as usize).unwrap();
+                },
+                _ => {
+                    let buffer = image::ImageBuffer::from_fn(width, height, get_pixel_ldr);
+                    image::ImageRgb8(buffer).save(&mut fout, format).unwrap();
+                }
+            }
             fout.flush().unwrap();
             fout.persist(&output_path).unwrap();
             pb.add(samples_pending.len() as u64);

@@ -38,6 +38,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_xyz_from_valid() {
         let mut max_x = 0.0;
         let mut max_x_freq = 0;
@@ -75,6 +76,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_reflect_wavelength() {
         let mut max_refl = 0.0;
         let mut max_xyz = Xyz::with_wp(0.0, 0.0, 0.0);

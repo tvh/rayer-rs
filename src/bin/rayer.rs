@@ -316,13 +316,14 @@ fn cornell() -> Scene {
         .map(|t| Arc::new(t.clone()) as Arc<Hitable>)
         .collect();
 
+    let cube_mat = Arc::new(Dielectric::SF66);
     objects.push(Arc::new(
         translate(
             rotate_y(
                 axis_aligned_cuboid(
                     point3(0.0, 0.0, 0.0),
                     point3(165.0, 165.0, 156.0),
-                    white.clone()
+                    cube_mat
                 ),
                 -18.0
             ),
@@ -330,17 +331,27 @@ fn cornell() -> Scene {
         )
     ));
 
+    let buddha_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.5));
+    let buddha = Mesh::from_obj(Path::new("data/buddha.obj"), buddha_mat).unwrap();
     objects.push(Arc::new(
         translate(
-            rotate_y(
-                axis_aligned_cuboid(
-                    point3(0.0, 0.0, 0.0),
-                    point3(165.0, 330.0, 156.0),
-                    white.clone()
-                ),
-                15.0
+            scale(
+                rotate_y(buddha, 200.0),
+                vec3(40.0, 40.0, 40.0)
             ),
-            vec3(265.0, 0.0, 295.0)
+            vec3(380.0, 0.0, 350.0)
+        )
+    ));
+
+    let bunny_mat = Arc::new(Lambertian::new(Rgb::with_wp(0.7, 0.1, 0.05)));
+    let bunny = Mesh::from_obj(Path::new("data/bunny.obj"), bunny_mat).unwrap();
+    objects.push(Arc::new(
+        translate(
+            scale(
+                rotate_y(bunny, 180.0),
+                vec3(40.0, 40.0, 40.0)
+            ),
+            vec3(180.0, 180.0, 130.0)
         )
     ));
 

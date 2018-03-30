@@ -26,7 +26,7 @@ use num_traits::FloatConst;
 /// assert_eq!(translated_object.bbox().bounds[1], object.bbox().bounds[1]+offset);
 /// ```
 #[derive(Debug, Clone)]
-pub struct Translate<H: Hitable> {
+struct Translate<H: Hitable> {
     pub object: H,
     pub offset: Vector3D<f32>,
 }
@@ -67,7 +67,7 @@ impl<H: Hitable> Hitable for Translate<H> {
 }
 
 #[derive(Debug, Clone)]
-pub struct RotateY<H: Hitable> {
+struct RotateY<H: Hitable> {
     sin_theta: f32,
     cos_theta: f32,
     object: H,
@@ -134,4 +134,77 @@ pub fn rotate_y<H: Hitable>(object: H, angle: f32) -> impl Hitable {
         }
     }
     RotateY { cos_theta, sin_theta, object, bbox }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct Scale<H: Hitable> {
+    object: H,
+    scale: Vector3D<f32>,
+    inv_scale: Vector3D<f32>,
+    bbox: AABB,
+}
+
+pub fn scale<H: Hitable>(object: H, scale: Vector3D<f32>) -> impl Hitable {
+    let bbox = object.bbox();
+    let scaled_l =
+        point3(
+            bbox.bounds[0+(scale.x<0.0) as usize].x*scale.x,
+            bbox.bounds[0+(scale.y<0.0) as usize].y*scale.y,
+            bbox.bounds[0+(scale.z<0.0) as usize].z*scale.z,
+        );
+    let scaled_r =
+        point3(
+            bbox.bounds[1-(scale.x<0.0) as usize].x*scale.x,
+            bbox.bounds[1-(scale.y<0.0) as usize].y*scale.y,
+            bbox.bounds[1-(scale.z<0.0) as usize].z*scale.z,
+        );
+    Scale {
+        object,
+        scale,
+        inv_scale: vec3(scale.x.recip(), scale.y.recip(), scale.z.recip()),
+        bbox: AABB { bounds: [scaled_l, scaled_r] }
+    }
+}
+
+impl<H: Hitable> Hitable for Scale<H> {
+    fn bbox(&self) -> AABB {
+        self.bbox
+    }
+
+    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let scaled_origin = point3(
+            r.origin.x*self.inv_scale.x,
+            r.origin.y*self.inv_scale.y,
+            r.origin.z*self.inv_scale.z,
+        );
+        let scaled_direction = vec3(
+            r.direction.x*self.inv_scale.x,
+            r.direction.y*self.inv_scale.y,
+            r.direction.z*self.inv_scale.z,
+        );
+        let scaled_r = Ray::new(scaled_origin, scaled_direction, r.wl, r.ti);
+
+        match self.object.hit(scaled_r, t_min, t_max) {
+            None => None,
+            Some(rec) => {
+                let p = point3(
+                    rec.p.x*self.scale.x,
+                    rec.p.y*self.scale.y,
+                    rec.p.z*self.scale.z,
+                );
+                let normal = vec3(
+                    rec.normal.x*self.scale.x,
+                    rec.normal.y*self.scale.y,
+                    rec.normal.z*self.scale.z,
+                ).normalize();
+
+                Some(HitRecord {
+                    p,
+                    normal,
+                    ..rec
+                })
+            }
+        }
+    }
 }

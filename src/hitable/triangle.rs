@@ -2,7 +2,7 @@ use euclid::*;
 use std::sync::Arc;
 use std::path::Path;
 use std::io::Error;
-use obj::*;
+use obj::{SimplePolygon, Obj};
 
 use hitable::*;
 use hitable::bvh::BVH;
@@ -30,6 +30,42 @@ impl Triangle {
             texture,
         }
     }
+}
+
+pub fn polygon(
+    data: &[(Point3D<f32>, Vector3D<f32>, Vector2D<f32>)],
+    texture: Arc<Texture>,
+) -> Vec<Triangle> {
+    let mut res = Vec::with_capacity(data.len()-2);
+    match data {
+        &[] => return res,
+        &[(p0, n0, t0), ref rest..] => {
+            for (&(p1, n1, t1), &(p2, n2, t2)) in rest.iter().zip(rest[1..].iter()) {
+                res.push(Triangle::new(
+                    (p0, p1, p2),
+                    (n0, n1, n2),
+                    (t0, t1, t2),
+                    texture.clone()
+                ));
+            };
+            return res;
+        }
+    }
+}
+
+/// Construct a polygon from a number of points.
+/// All points should be on the same plane.
+/// The texture coordinates will always be mapped to (0,0)
+pub fn uniform_polygon(
+    data: &[Point3D<f32>],
+    normal: Vector3D<f32>,
+    material: Arc<Texture>,
+) -> Vec<Triangle> {
+    let mut args = Vec::with_capacity(data.len());
+    for &p in data.iter() {
+        args.push((p, normal, vec2(0.0, 0.0)));
+    }
+    polygon(args.as_slice(), material.into())
 }
 
 impl Hitable for Triangle {

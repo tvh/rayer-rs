@@ -111,7 +111,7 @@ mod tests {
         let a = black_box(ColorSpectrum10::new([0.2; 10]));
         let b = black_box(ColorSpectrum10::new([0.4; 10]));
         bench.iter(|| {
-            a+b
+            black_box(a+b)
         });
     }
 
@@ -119,6 +119,6 @@ mod tests {
     fn bench_match(bench: &mut Bencher) {
         let white = black_box(ColorSpectrum10::new([1.0; 10]));
         let wl = black_box(500.0);
-        bench.iter(|| white.reflect(wl));
+        bench.iter(|| black_box(white.reflect(wl)));
     }
 }

@@ -97,19 +97,19 @@ mod tests {
     #[bench]
     fn bench_thread_rng(bench: &mut Bencher) {
         let mut rng = rand::thread_rng();
-        bench.iter(|| rng.next_f32());
+        bench.iter(|| black_box(rng.next_f32()));
     }
 
     #[bench]
     fn bench_xorshift_rng(bench: &mut Bencher) {
         let mut rng = rand::XorShiftRng::new_unseeded();
-        bench.iter(|| rng.next_f32());
+        bench.iter(|| black_box(rng.next_f32()));
     }
 
     #[bench]
     fn bench_xorshift_thread_rng(bench: &mut Bencher) {
         let mut rng = super::thread_rng();
-        bench.iter(|| rng.next_f32());
+        bench.iter(|| black_box(rng.next_f32()));
     }
 
     #[bench]
@@ -117,21 +117,21 @@ mod tests {
         let mut rng = super::thread_rng();
         let low = black_box(-1.0);
         let high = black_box(1.0);
-        bench.iter(|| rng.gen_range(low, high));
+        bench.iter(|| black_box(rng.gen_range(low, high)));
     }
 
     #[bench]
     fn bench_rand_in_unit_sphere_f32(bench: &mut Bencher) {
-        bench.iter(|| super::rand_in_unit_sphere() as Vector3D<f32>);
+        bench.iter(|| black_box(super::rand_in_unit_sphere() as Vector3D<f32>));
     }
 
     #[bench]
     fn bench_rand_in_unit_sphere_f64(bench: &mut Bencher) {
-        bench.iter(|| super::rand_in_unit_sphere() as Vector3D<f64>);
+        bench.iter(|| black_box(super::rand_in_unit_sphere() as Vector3D<f64>));
     }
 
     #[bench]
     fn bench_rand_in_unit_disk(bench: &mut Bencher) {
-        bench.iter(|| super::rand_in_unit_disk() as Vector2D<f32>);
+        bench.iter(|| black_box(super::rand_in_unit_disk() as Vector2D<f32>));
     }
 }

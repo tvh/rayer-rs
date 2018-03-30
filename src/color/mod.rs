@@ -129,18 +129,18 @@ mod tests {
     fn bench_match_color_rgb(bench: &mut Bencher) {
         let white = black_box(Rgb::with_wp(1.0, 1.0, 1.0));
         let wl = black_box(500.0);
-        bench.iter(|| white.reflect(wl));
+        bench.iter(|| black_box(white.reflect(wl)));
     }
 
     #[bench]
     fn bench_xyz_from_wavelength(bench: &mut Bencher) {
         let a = black_box(500.0);
-        bench.iter(|| xyz_from_wavelength(a));
+        bench.iter(|| black_box(xyz_from_wavelength(a)));
     }
 
     #[bench]
     fn bench_xyz_to_rgb(bench: &mut Bencher) {
         let a = black_box(xyz_from_wavelength(500.0));
-        bench.iter(|| Rgb::from_xyz(a));
+        bench.iter(|| black_box(Rgb::from_xyz(a)));
     }
 }

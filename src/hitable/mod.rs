@@ -137,7 +137,7 @@ mod tests {
         let aabb = black_box(AABB { bounds: [point3(-1.0, -1.0, -1.0), point3(1.0, 1.0, 1.0)] });
         let t_min = black_box(0.0001);
         let t_max = black_box(f32::max_value());
-        bench.iter(|| aabb.intersects(ray, t_min, t_max));
+        bench.iter(|| black_box(aabb.intersects(ray, t_min, t_max)));
     }
 
     #[bench]
@@ -146,13 +146,13 @@ mod tests {
         let aabb = black_box(AABB::empty());
         let t_min = black_box(0.0001);
         let t_max = black_box(f32::max_value());
-        bench.iter(|| aabb.intersects(ray, t_min, t_max));
+        bench.iter(|| black_box(aabb.intersects(ray, t_min, t_max)));
     }
 
     #[bench]
     fn bench_merge_aabb(bench: &mut Bencher) {
         let aabb1 = black_box(AABB { bounds: [point3(-1.0, -1.0, -1.0), point3(0.0, 0.0, 0.0)] });
         let aabb2 = black_box(AABB { bounds: [point3(0.0, 0.0, 0.0), point3(1.0, 1.0, 1.0)] });
-        bench.iter(|| aabb1.merge(aabb2) );
+        bench.iter(|| black_box(aabb1.merge(aabb2)) );
     }
 }

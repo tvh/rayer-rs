@@ -192,7 +192,7 @@ mod tests {
             hitables.push(Arc::new(sphere));
         }
         bench.iter(|| {
-            BVH::initialize(hitables.clone())
+            black_box(BVH::initialize(hitables.clone()))
         });
     }
 
@@ -214,7 +214,7 @@ mod tests {
         }
         let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0, 0.0));
         let bvh = BVH::initialize(hitables);
-        bench.iter(|| bvh.hit(ray, f32::epsilon(), f32::max_value()) );
+        bench.iter(|| black_box(bvh.hit(ray, f32::epsilon(), f32::max_value())) );
     }
 
     #[bench]

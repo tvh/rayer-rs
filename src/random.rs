@@ -42,6 +42,15 @@ pub fn rand<T: Rand>() -> T {
 }
 
 #[inline]
+/// Generate a number in a given range.
+///
+/// ```
+/// # extern crate rayer;
+/// # use rayer::random::gen_range;
+/// assert_ne!(gen_range(0.0, 1.0), gen_range(0.0, 1.0));
+/// assert!(gen_range(0, 5)>=0);
+/// assert!(gen_range(0, 5)<5);
+/// ```
 pub fn gen_range<T: PartialOrd + SampleRange>(low: T, high: T) -> T {
     thread_rng().gen_range(low, high)
 }
@@ -84,13 +93,6 @@ mod tests {
     use rand;
     use rand::Rng;
     use euclid::*;
-
-    #[test]
-    fn test_gen_range() {
-        let res1 = super::gen_range(-1.0, 1.0);
-        let res2 = super::gen_range(-1.0 as f32, 1.0);
-        assert!(res1 != res2);
-    }
 
     #[bench]
     fn bench_thread_rng(bench: &mut Bencher) {

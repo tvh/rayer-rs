@@ -20,7 +20,7 @@ pub struct HitRecord<'a> {
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct AABB {
-    bounds: [Point3D<f32>;2]
+    pub bounds: [Point3D<f32>;2]
 }
 
 impl AABB {

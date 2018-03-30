@@ -1,6 +1,5 @@
 use hitable::*;
 use pdqselect::select_by;
-use std::sync::Arc;
 use decorum::Ordered;
 use std::ptr;
 
@@ -188,6 +187,7 @@ mod tests {
     use pdqselect::select;
     use texture::*;
     use material::*;
+    use std::sync::Arc;
 
     fn bench_build(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());

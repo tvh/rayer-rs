@@ -133,6 +133,31 @@ pub struct Mesh {
 }
 
 impl Mesh {
+    /// Load an obj file from disk.
+    /// It currently ignores the material stored in the file,
+    /// but loads the texture coordinates correctly.
+    /// If there are no texture coordinates, they will all be mapped to (0,0).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate rayer;
+    /// # extern crate palette;
+    /// # extern crate euclid;
+    /// # use euclid::point3;
+    /// # use rayer::texture::Texture;
+    /// # use rayer::hitable::*;
+    /// # use rayer::hitable::triangle::*;
+    /// # use std::sync::Arc;
+    /// # use palette::*;
+    /// # use rayer::material::*;
+    /// # use std::path::Path;
+    /// #
+    /// # let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+    /// let bunny = Mesh::from_obj(Path::new("data/bunny.obj"), texture).unwrap();
+    /// let expected = AABB { bounds: [point3(-1.893798,-0.340252,-1.237472), point3(1.220182,2.74642,1.175994)] };
+    /// assert_eq!(expected, bunny.bbox());
+    /// ```
     pub fn from_obj(
         path: &Path,
         texture: Arc<Texture>

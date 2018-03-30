@@ -1,29 +1,16 @@
-#![feature(const_fn)]
-#![feature(fixed_size_array)]
-#![feature(plugin)]
-#![feature(slice_patterns)]
-#![feature(test)]
-#![feature(underscore_lifetimes)]
-#![plugin(quickcheck_macros)]
-extern crate core;
+extern crate rayer;
 extern crate clap;
 extern crate cpuprofiler;
 extern crate crossbeam_channel;
-extern crate decorum;
 extern crate euclid;
 #[macro_use]
 extern crate lazy_static;
 extern crate image;
 extern crate num_traits;
-extern crate obj;
 extern crate palette;
 extern crate pbr;
-extern crate pdqselect;
-extern crate quickcheck;
-extern crate rand;
 extern crate rayon;
 extern crate tempfile;
-extern crate test;
 
 use clap::{Arg, App};
 use crossbeam_channel::{unbounded, Sender};
@@ -42,13 +29,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::thread;
 
-mod texture;
-mod camera;
-mod color;
-mod hitable;
-mod material;
-mod random;
-mod ray;
+use rayer::*;
 
 use color::HasReflectance;
 use hitable::Hitable;

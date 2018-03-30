@@ -53,21 +53,6 @@ pub fn polygon(
     }
 }
 
-/// Construct a polygon from a number of points.
-/// All points should be on the same plane.
-/// The texture coordinates will always be mapped to (0,0)
-pub fn uniform_polygon(
-    data: &[Point3D<f32>],
-    normal: Vector3D<f32>,
-    material: Arc<Texture>,
-) -> Vec<Triangle> {
-    let mut args = Vec::with_capacity(data.len());
-    for &p in data.iter() {
-        args.push((p, normal, vec2(0.0, 0.0)));
-    }
-    polygon(args.as_slice(), material.into())
-}
-
 impl Hitable for Triangle {
     fn bbox(&self) -> AABB {
         let mut low = self.vert.0;
@@ -128,6 +113,21 @@ impl Hitable for Triangle {
     }
 }
 
+/// Construct a polygon from a number of points.
+/// All points should be on the same plane.
+/// The texture coordinates will always be mapped to (0,0)
+pub fn uniform_polygon(
+    data: &[Point3D<f32>],
+    normal: Vector3D<f32>,
+    material: Arc<Texture>,
+) -> Vec<Triangle> {
+    let mut args = Vec::with_capacity(data.len());
+    for &p in data.iter() {
+        args.push((p, normal, vec2(0.0, 0.0)));
+    }
+    polygon(args.as_slice(), material.into())
+}
+
 pub struct Mesh {
     data: BVH<Triangle>
 }
@@ -186,6 +186,47 @@ impl Hitable for Mesh {
     }
 }
 
+/// Build an axis aligned cuboid.
+/// For now all texture coordinated will be mapped to (0, 0)
+pub fn axis_aligned_cuboid(
+    l: Point3D<f32>,
+    h: Point3D<f32>,
+    texture: Arc<Texture>
+) -> Mesh {
+    let mut triangles = Vec::with_capacity(12);
+    triangles.extend_from_slice(uniform_polygon(
+        &[l, point3(l.x, h.y, l.z), point3(l.x, h.y, h.z), point3(l.x, l.y, h.z)],
+        vec3(-1.0, 0.0, 0.0),
+        texture.clone()
+    ).as_slice());
+    triangles.extend_from_slice(uniform_polygon(
+        &[l, point3(h.x, l.y, l.z), point3(h.x, l.y, h.z), point3(l.x, l.y, h.z)],
+        vec3(0.0, -1.0, 0.0),
+        texture.clone()
+    ).as_slice());
+    triangles.extend_from_slice(uniform_polygon(
+        &[l, point3(h.x, l.y, l.z), point3(h.x, h.y, l.z), point3(l.x, h.y, l.z)],
+        vec3(0.0, 0.0, -1.0),
+        texture.clone()
+    ).as_slice());
+    triangles.extend_from_slice(uniform_polygon(
+        &[h, point3(h.x, h.y, l.z), point3(h.x, l.y, l.z), point3(h.x, l.y, h.z)],
+        vec3(1.0, 0.0, 0.0),
+        texture.clone()
+    ).as_slice());
+    triangles.extend_from_slice(uniform_polygon(
+        &[h, point3(h.x, h.y, l.z), point3(l.x, h.y, l.z), point3(l.x, h.y, h.z)],
+        vec3(0.0, 1.0, 0.0),
+        texture.clone()
+    ).as_slice());
+    triangles.extend_from_slice(uniform_polygon(
+        &[h, point3(h.x, l.y, h.z), point3(l.x, l.y, h.z), point3(l.x, h.y, h.z)],
+        vec3(0.0, 0.0, 1.0),
+        texture.clone()
+    ).as_slice());
+
+    Mesh { data: BVH::initialize(triangles.as_slice()) }
+}
 
 #[cfg(test)]
 mod tests {

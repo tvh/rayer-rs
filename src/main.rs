@@ -328,11 +328,22 @@ fn cornell() -> Scene {
         right,
         green
     ));
-    let objects: Vec<Arc<Hitable>> =
+    let mut objects: Vec<Arc<Hitable>> =
         triangles
         .iter()
         .map(|t| Arc::new(t.clone()) as Arc<Hitable>)
         .collect();
+
+    objects.push(Arc::new(axis_aligned_cuboid(
+        point3(130.0, 0.0, 65.0),
+        point3(295.0, 165.0, 230.0),
+        white.clone()
+    )));
+    objects.push(Arc::new(axis_aligned_cuboid(
+        point3(265.0, 0.0, 295.0),
+        point3(430.0, 330.0, 460.0),
+        white.clone()
+    )));
 
     let look_from = Point3D::new(278.0, 278.0, -800.0);
     let look_at = Point3D::new(278.0, 278.0, 0.0);

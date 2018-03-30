@@ -61,6 +61,8 @@ impl AABB {
         }
     }
 
+    const WIGGLE_FACTOR: f32 = 0.0001;
+
     pub fn intersects_2(&self, second: &Self, r: Ray, t0: f32, t1: f32) -> (Option<(f32, f32)>, Option<(f32, f32)>) {
         let bounds_vec_xy = f32x8::new(
             self.bounds[r.sign.x as usize].x,
@@ -120,7 +122,7 @@ impl AABB {
         };
 
         let res_0 = {
-            if (tmin_0>tmax_0) || (tmin_0 > t1) || (tmax_0 < t0) {
+            if (tmin_0>tmax_0+AABB::WIGGLE_FACTOR) || (tmin_0 > t1) || (tmax_0 < t0) {
                 None
             } else {
                 let tzmin = (self.bounds[r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
@@ -131,7 +133,7 @@ impl AABB {
                 if tzmax<tmax_0 {
                     tmax_0 = tzmax;
                 }
-                if (tmin_0<tmax_0) && (tmin_0 < t1) && (tmax_0 > t0) {
+                if (tmin_0<tmax_0+AABB::WIGGLE_FACTOR) && (tmin_0 < t1) && (tmax_0 > t0) {
                     Some((tmin_0, tmax_0))
                 } else {
                     None
@@ -158,7 +160,7 @@ impl AABB {
         };
 
         let res_1 = {
-            if (tmin_1>tmax_1) || (tmin_1 > t1) || (tmax_1 < t0) {
+            if (tmin_1>tmax_1+AABB::WIGGLE_FACTOR) || (tmin_1 > t1) || (tmax_1 < t0) {
                 None
             } else {
                 let tzmin = (second.bounds[r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
@@ -169,7 +171,7 @@ impl AABB {
                 if tzmax<tmax_1 {
                     tmax_1 = tzmax;
                 }
-                if (tmin_1<tmax_1) && (tmin_1 < t1) && (tmax_1 > t0) {
+                if (tmin_1<tmax_1+AABB::WIGGLE_FACTOR) && (tmin_1 < t1) && (tmax_1 > t0) {
                     Some((tmin_1, tmax_1))
                 } else {
                     None

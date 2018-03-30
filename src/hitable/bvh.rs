@@ -5,22 +5,23 @@ use std::ptr;
 
 #[derive(Debug)]
 pub struct BVH<H: Hitable> {
-    nodes: Vec<Node<H>>
+    nodes: Vec<Node>,
+    items: Vec<H>,
 }
 
 #[derive(Debug)]
-enum Node<H: Hitable> {
+enum Node {
     Bin {
         left_length: usize,
         bbox: AABB,
     },
     Tip {
-        hitable: H,
+        hitable: usize,
         bbox: AABB,
     },
 }
 
-impl<H: Hitable> Node<H> {
+impl Node {
     fn bbox(&self) -> AABB {
         match self {
             &Node::Bin{bbox, ..} => bbox,
@@ -29,21 +30,20 @@ impl<H: Hitable> Node<H> {
     }
 }
 
-impl<H: Hitable+Clone> BVH<H> {
-    pub fn initialize(items: &[H]) -> BVH<H> {
+impl<H: Hitable> BVH<H> {
+    pub fn initialize(items: Vec<H>) -> BVH<H> {
         #[derive(Clone, Copy)]
         enum Axis {
             X, Y, Z
         }
-        fn go<H: Hitable + Clone>(items: &mut [(Point3D<f32>, H)], res: &mut Vec<Node<H>>) -> (AABB, usize) {
+        fn go(items: &mut [(Point3D<f32>, usize, AABB)], res: &mut Vec<Node>) -> (AABB, usize) {
             match items {
                 &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
-                    let item = item.1.clone();
-                    let bbox = item.bbox();
+                    let bbox = item.2;
                     res.push(Node::Tip {
-                        hitable: item,
-                        bbox: bbox
+                        hitable: item.1,
+                        bbox,
                     });
                     return (bbox, 1);
                 },
@@ -56,7 +56,7 @@ impl<H: Hitable+Clone> BVH<H> {
             let mut max_x = items[0].0.x;
             let mut max_y = items[0].0.y;
             let mut max_z = items[0].0.z;
-            for &(centroid, _) in items[1..].iter() {
+            for &(centroid, _, _) in items[1..].iter() {
                 if min_x>centroid.x { min_x=centroid.x };
                 if min_y>centroid.y { min_y=centroid.y };
                 if min_z>centroid.z { min_z=centroid.z };
@@ -104,16 +104,16 @@ impl<H: Hitable+Clone> BVH<H> {
             };
             (bbox, 1+left_length+right_length)
         }
-        let mut items: Vec<(Point3D<f32>, H)> = items.iter().map(|x| (x.centroid(), x.clone()) ).collect();
-        let mut nodes: Vec<Node<H>> = Vec::with_capacity(items.len()*2-1);
-        go(items.as_mut_slice(), &mut nodes);
-        BVH { nodes }
+        let mut item_stats: Vec<(Point3D<f32>, usize, AABB)> = items.iter().enumerate().map(|(i, x)| (x.centroid(), i, x.bbox())).collect();
+        let mut nodes: Vec<Node> = Vec::with_capacity(items.len()*2-1);
+        go(item_stats.as_mut_slice(), &mut nodes);
+        BVH { nodes, items }
     }
 }
 
 impl<H: Hitable> Hitable for BVH<H> {
     fn bbox(&self) -> AABB {
-        let &BVH { ref nodes } = self;
+        let &BVH { ref nodes, .. } = self;
         match nodes.as_slice() {
             &[] => AABB::empty(),
             &[Node::Tip {bbox, ..}, ..] => bbox,
@@ -122,8 +122,8 @@ impl<H: Hitable> Hitable for BVH<H> {
     }
 
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
-        let &BVH { ref nodes } = self;
-        fn go<H: Hitable>(nodes: &[Node<H>], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let &BVH { ref nodes, ref items } = self;
+        fn go<'a, H: Hitable>(items: &'a[H], nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
             match nodes {
                 &[] => None,
                 &[Node::Bin {left_length, ..}, ref left..] => {
@@ -133,8 +133,8 @@ impl<H: Hitable> Hitable for BVH<H> {
 
                     match (left_hit, right_hit) {
                         (None, None) => None,
-                        (Some(_), None) => go(left, r, t_min, t_max),
-                        (None, Some(_)) => go(right, r, t_min, t_max),
+                        (Some(_), None) => go(items, left, r, t_min, t_max),
+                        (None, Some(_)) => go(items, right, r, t_min, t_max),
                         (Some(left_range), Some(right_range)) => {
                             let mut closest_match = None;
                             let mut closest_so_far = t_max;
@@ -146,7 +146,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                                     (right, (left, left_range))
                                 };
 
-                            match go(first, r, t_min, t_max) {
+                            match go(items, first, r, t_min, t_max) {
                                 None => (),
                                 Some(hit) => {
                                     closest_so_far = hit.t;
@@ -158,7 +158,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                                 return closest_match;
                             }
 
-                            match go(second, r, t_min, closest_so_far) {
+                            match go(items, second, r, t_min, closest_so_far) {
                                 None => (),
                                 Some(hit) => {
                                     closest_match = Some(hit);
@@ -169,12 +169,12 @@ impl<H: Hitable> Hitable for BVH<H> {
                         }
                     }
                 },
-                &[Node::Tip {ref hitable, ..}, ..] => {
-                    hitable.hit(r, t_min, t_max)
+                &[Node::Tip {hitable, ..}, ..] => {
+                    items[hitable].hit(r, t_min, t_max)
                 },
             }
         }
-        go(nodes.as_slice(), r, t_min, t_max)
+        go(items.as_slice(), nodes.as_slice(), r, t_min, t_max)
     }
 }
 
@@ -201,7 +201,9 @@ mod tests {
             let sphere = Sphere::new(center, radius, texture.clone());
             hitables.push(Arc::new(sphere));
         }
-        bench.iter(|| BVH::initialize(hitables.as_slice()) );
+        bench.iter(|| {
+            BVH::initialize(hitables.clone())
+        });
     }
 
     #[bench]
@@ -221,7 +223,7 @@ mod tests {
             hitables.push(sphere);
         }
         let ray = black_box(Ray::new(point3(-3.0, -2.0, -1.0), Vector3D::new(3.0, 2.0, 1.0), 500.0, 0.0));
-        let bvh = BVH::initialize(hitables.as_slice());
+        let bvh = BVH::initialize(hitables);
         bench.iter(|| bvh.hit(ray, f32::epsilon(), f32::max_value()) );
     }
 

@@ -198,7 +198,7 @@ impl Mesh {
             }
         }
 
-        Ok(Mesh{ data: Arc::new(BVH::initialize(triangles.as_slice())) })
+        Ok(Mesh{ data: Arc::new(BVH::initialize(triangles)) })
     }
 }
 
@@ -250,5 +250,5 @@ pub fn axis_aligned_cuboid(
         texture.clone()
     ).as_slice());
 
-    Mesh { data: Arc::new(BVH::initialize(triangles.as_slice())) }
+    Mesh { data: Arc::new(BVH::initialize(triangles)) }
 }

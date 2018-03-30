@@ -450,8 +450,8 @@ fn main() {
     };
     let num_samples = u64::from_str(matches.value_of("samples").unwrap()).unwrap();
 
-    let Scene{ mut objects, look_from, look_at, aperture, vfov, focus_dist, render_sky } = get_scene();
-    let world = BVH::initialize(objects.as_mut_slice());
+    let Scene{ objects, look_from, look_at, aperture, vfov, focus_dist, render_sky } = get_scene();
+    let world = BVH::initialize(objects);
     let up = Vector3D::new(0.0, 1.0, 0.0);
 
     let cam = camera::Camera::new(look_from, look_at, up, vfov, width as f32/height as f32, aperture, focus_dist, 0.0, 1.0);

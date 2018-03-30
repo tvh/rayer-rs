@@ -2,6 +2,7 @@
 #![feature(fixed_size_array)]
 #![feature(plugin)]
 #![feature(slice_patterns)]
+#![feature(stdsimd)]
 #![feature(test)]
 #![feature(underscore_lifetimes)]
 #![plugin(quickcheck_macros)]

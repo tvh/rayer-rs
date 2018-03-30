@@ -118,8 +118,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                 &[] => None,
                 &[Node { next: Next::Bin{left_length}, ..}, ref left..] => {
                     let right = &left[left_length..];
-                    let left_hit = left[0].bbox.intersects(r, t_min, t_max);
-                    let right_hit = right[0].bbox.intersects(r, t_min, t_max);
+                    let (left_hit, right_hit) = left[0].bbox.intersects_2(&right[0].bbox, r, t_min, t_max);
 
                     match (left_hit, right_hit) {
                         (None, None) => None,

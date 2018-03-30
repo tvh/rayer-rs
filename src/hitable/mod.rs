@@ -1,5 +1,4 @@
 pub mod sphere;
-pub mod hitable_list;
 pub mod triangle;
 pub mod bvh;
 pub mod instance;

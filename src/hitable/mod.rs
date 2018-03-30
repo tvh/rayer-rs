@@ -135,14 +135,18 @@ mod tests {
     fn bench_intersect_aabb_hit(bench: &mut Bencher) {
         let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0));
         let aabb = black_box(AABB { bounds: [point3(-1.0, -1.0, -1.0), point3(1.0, 1.0, 1.0)] });
-        bench.iter(|| aabb.intersects(ray, f32::epsilon(), f32::max_value()));
+        let t_min = black_box(0.0001);
+        let t_max = black_box(f32::max_value());
+        bench.iter(|| aabb.intersects(ray, t_min, t_max));
     }
 
     #[bench]
     fn bench_intersect_aabb_miss(bench: &mut Bencher) {
         let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0));
         let aabb = black_box(AABB::empty());
-        bench.iter(|| aabb.intersects(ray, f32::epsilon(), f32::max_value()));
+        let t_min = black_box(0.0001);
+        let t_max = black_box(f32::max_value());
+        bench.iter(|| aabb.intersects(ray, t_min, t_max));
     }
 
     #[bench]

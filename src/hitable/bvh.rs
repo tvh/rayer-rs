@@ -3,10 +3,12 @@ use pdqselect::select_by;
 use decorum::Ordered;
 use std::ptr;
 
+#[derive(Debug)]
 pub struct BVH<H: Hitable> {
     nodes: Vec<Node<H>>
 }
 
+#[derive(Debug)]
 enum Node<H: Hitable> {
     Bin {
         left_length: usize,

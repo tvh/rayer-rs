@@ -2,6 +2,7 @@ pub mod sphere;
 pub mod hitable_list;
 pub mod triangle;
 pub mod bvh;
+pub mod instance;
 
 use num_traits::Float;
 use euclid::*;

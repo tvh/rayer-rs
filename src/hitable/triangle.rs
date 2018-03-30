@@ -128,8 +128,9 @@ pub fn uniform_polygon(
     polygon(args.as_slice(), material.into())
 }
 
+#[derive(Debug, Clone)]
 pub struct Mesh {
-    data: BVH<Triangle>
+    data: Arc<BVH<Triangle>>
 }
 
 impl Mesh {
@@ -197,7 +198,7 @@ impl Mesh {
             }
         }
 
-        Ok(Mesh{ data: BVH::initialize(triangles.as_slice()) })
+        Ok(Mesh{ data: Arc::new(BVH::initialize(triangles.as_slice())) })
     }
 }
 
@@ -249,5 +250,5 @@ pub fn axis_aligned_cuboid(
         texture.clone()
     ).as_slice());
 
-    Mesh { data: BVH::initialize(triangles.as_slice()) }
+    Mesh { data: Arc::new(BVH::initialize(triangles.as_slice())) }
 }

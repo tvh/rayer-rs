@@ -10,24 +10,15 @@ pub struct BVH<H: Hitable> {
 }
 
 #[derive(Debug)]
-enum Node {
-    Bin {
-        left_length: usize,
-        bbox: AABB,
-    },
-    Tip {
-        hitable: usize,
-        bbox: AABB,
-    },
+struct Node {
+    bbox: AABB,
+    next: Next,
 }
 
-impl Node {
-    fn bbox(&self) -> AABB {
-        match self {
-            &Node::Bin{bbox, ..} => bbox,
-            &Node::Tip{bbox, ..} => bbox
-        }
-    }
+#[derive(Debug)]
+enum Next {
+    Bin { left_length: usize },
+    Tip { hitable: usize },
 }
 
 impl<H: Hitable> BVH<H> {
@@ -41,8 +32,8 @@ impl<H: Hitable> BVH<H> {
                 &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
                     let bbox = item.2;
-                    res.push(Node::Tip {
-                        hitable: item.1,
+                    res.push(Node {
+                        next: Next::Tip { hitable: item.1},
                         bbox,
                     });
                     return (bbox, 1);
@@ -99,7 +90,7 @@ impl<H: Hitable> BVH<H> {
             unsafe {
                 ptr::write(
                     res.as_mut_ptr().offset(current_pos as isize),
-                    Node::Bin{ left_length, bbox }
+                    Node {bbox, next: Next::Bin{ left_length } }
                 );
             };
             (bbox, 1+left_length+right_length)
@@ -116,8 +107,7 @@ impl<H: Hitable> Hitable for BVH<H> {
         let &BVH { ref nodes, .. } = self;
         match nodes.as_slice() {
             &[] => AABB::empty(),
-            &[Node::Tip {bbox, ..}, ..] => bbox,
-            &[Node::Bin {bbox, ..}, ..] => bbox,
+            &[Node {bbox, ..}, ..] => bbox,
         }
     }
 
@@ -126,10 +116,10 @@ impl<H: Hitable> Hitable for BVH<H> {
         fn go<'a, H: Hitable>(items: &'a[H], nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
             match nodes {
                 &[] => None,
-                &[Node::Bin {left_length, ..}, ref left..] => {
+                &[Node { next: Next::Bin{left_length}, ..}, ref left..] => {
                     let right = &left[left_length..];
-                    let left_hit = left[0].bbox().intersects(r, t_min, t_max);
-                    let right_hit = right[0].bbox().intersects(r, t_min, t_max);
+                    let left_hit = left[0].bbox.intersects(r, t_min, t_max);
+                    let right_hit = right[0].bbox.intersects(r, t_min, t_max);
 
                     match (left_hit, right_hit) {
                         (None, None) => None,
@@ -169,7 +159,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                         }
                     }
                 },
-                &[Node::Tip {hitable, ..}, ..] => {
+                &[Node {next: Next::Tip{hitable}, ..}, ..] => {
                     items[hitable].hit(r, t_min, t_max)
                 },
             }

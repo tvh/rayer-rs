@@ -60,6 +60,10 @@ impl AABB {
         }
     }
 
+    pub fn intersects_2(&self, second: &Self, r: Ray, t0: f32, t1: f32) -> (Option<(f32, f32)>, Option<(f32, f32)>) {
+        (self.intersects(r, t0, t1), second.intersects(r, t0, t1))
+    }
+
     pub fn empty() -> AABB {
         AABB {
             bounds: [
@@ -143,10 +147,40 @@ mod tests {
     #[bench]
     fn bench_intersect_aabb_miss(bench: &mut Bencher) {
         let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0));
-        let aabb = black_box(AABB::empty());
+        let aabb = black_box(AABB { bounds: [point3(-3.0, -3.0, -3.0), point3(-2.0, -2.0, -2.0)] });
         let t_min = black_box(0.0001);
         let t_max = black_box(f32::max_value());
         bench.iter(|| black_box(aabb.intersects(ray, t_min, t_max)));
+    }
+
+    #[bench]
+    fn bench_intersect_aabb_hit_hit(bench: &mut Bencher) {
+        let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0));
+        let aabb_1 = black_box(AABB { bounds: [point3(-1.0, -1.0, -1.0), point3(1.0, 1.0, 1.0)] });
+        let aabb_2 = black_box(aabb_1);
+        let t_min = black_box(0.0001);
+        let t_max = black_box(f32::max_value());
+        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, ray, t_min, t_max)));
+    }
+
+    #[bench]
+    fn bench_intersect_aabb_hit_miss(bench: &mut Bencher) {
+        let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0));
+        let aabb_1 = black_box(AABB { bounds: [point3(-1.0, -1.0, -1.0), point3(1.0, 1.0, 1.0)] });
+        let aabb_2 = black_box(AABB { bounds: [point3(-3.0, -3.0, -3.0), point3(-2.0, -2.0, -2.0)] });
+        let t_min = black_box(0.0001);
+        let t_max = black_box(f32::max_value());
+        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, ray, t_min, t_max)));
+    }
+
+    #[bench]
+    fn bench_intersect_aabb_miss_miss(bench: &mut Bencher) {
+        let ray = black_box(Ray::new(point3(-3.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0));
+        let aabb_1 = black_box(AABB { bounds: [point3(-3.0, -3.0, -3.0), point3(-2.0, -2.0, -2.0)] });
+        let aabb_2 = black_box(aabb_1);
+        let t_min = black_box(0.0001);
+        let t_max = black_box(f32::max_value());
+        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, ray, t_min, t_max)));
     }
 
     #[bench]

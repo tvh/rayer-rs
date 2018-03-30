@@ -36,6 +36,7 @@ use hitable::Hitable;
 use hitable::bvh::*;
 use hitable::sphere::*;
 use hitable::triangle::*;
+use hitable::instance::*;
 use material::*;
 use random::*;
 use texture::Texture;
@@ -315,16 +316,33 @@ fn cornell() -> Scene {
         .map(|t| Arc::new(t.clone()) as Arc<Hitable>)
         .collect();
 
-    objects.push(Arc::new(axis_aligned_cuboid(
-        point3(130.0, 0.0, 65.0),
-        point3(295.0, 165.0, 230.0),
-        white.clone()
-    )));
-    objects.push(Arc::new(axis_aligned_cuboid(
-        point3(265.0, 0.0, 295.0),
-        point3(430.0, 330.0, 460.0),
-        white.clone()
-    )));
+    objects.push(Arc::new(
+        translate(
+            rotate_y(
+                axis_aligned_cuboid(
+                    point3(0.0, 0.0, 0.0),
+                    point3(165.0, 165.0, 156.0),
+                    white.clone()
+                ),
+                -18.0
+            ),
+            vec3(130.0, 0.0, 65.0)
+        )
+    ));
+
+    objects.push(Arc::new(
+        translate(
+            rotate_y(
+                axis_aligned_cuboid(
+                    point3(0.0, 0.0, 0.0),
+                    point3(165.0, 330.0, 156.0),
+                    white.clone()
+                ),
+                15.0
+            ),
+            vec3(265.0, 0.0, 295.0)
+        )
+    ));
 
     let look_from = Point3D::new(278.0, 278.0, -800.0);
     let look_at = Point3D::new(278.0, 278.0, 0.0);

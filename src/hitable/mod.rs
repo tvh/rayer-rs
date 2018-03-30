@@ -70,6 +70,14 @@ impl AABB {
         }
     }
 
+    pub fn is_empty(self) -> bool {
+        match self {
+            AABB { bounds: [low, high] } => {
+                low.x>high.x || low.y>high.y || low.z>high.z
+            }
+        }
+    }
+
     pub fn merge(self, other: AABB) -> AABB {
         match (self, other) {
             (AABB { bounds: [low_0, high_0] }, AABB { bounds: [low_1, high_1] }) => {

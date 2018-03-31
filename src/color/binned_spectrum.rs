@@ -3,7 +3,10 @@ use std::ops::*;
 use std::fmt::Debug;
 use core::array::FixedSizeArray;
 use std::fmt;
+use palette::*;
+use palette::white_point::E;
 
+use color::cie_1931::xyz_from_wavelength;
 use color::HasReflectance;
 
 pub trait BinData: Send + Sync {
@@ -88,6 +91,17 @@ impl<T: BinData> HasReflectance for BinnedSpectrum<T> {
             index = len-1;
         }
         self.spectrum.as_slice()[index as usize]
+    }
+
+    fn reflect_xyz(&self) -> Xyz<E, f32> {
+        let mut res = Xyz::with_wp(0.0, 0.0, 0.0);
+        let mut wl = T::WL_0;
+        for &v in self.spectrum.as_slice().iter() {
+            res = res+(xyz_from_wavelength(wl)*v);
+            wl += T::BIN_WIDTH;
+        }
+        res = res*3.0/(self.spectrum.as_slice().len() as f32);
+        return res;
     }
 }
 

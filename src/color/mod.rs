@@ -10,6 +10,12 @@ pub use self::cie_1931::xyz_from_wavelength;
 
 pub trait HasReflectance: Debug + Send + Sync {
     fn reflect(&self, wl: f32) -> f32;
+    fn reflect_xyz(&self) -> Xyz<E, f32> {
+        self.reflect_rgb().into()
+    }
+    fn reflect_rgb(&self) -> Rgb<E, f32> {
+        self.reflect_xyz().into()
+    }
 }
 
 
@@ -18,6 +24,10 @@ impl HasReflectance for Rgb<E, f32> where
     fn reflect(&self, wl: f32) -> f32 {
         let spectrum = rgb_base_colors::rgb_to_spectrum(*self);
         spectrum.reflect(wl)
+    }
+
+    fn reflect_rgb(&self) -> Rgb<E, f32> {
+        self.clone()
     }
 }
 

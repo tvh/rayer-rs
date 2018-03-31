@@ -37,6 +37,6 @@ mod tests {
         let origin = black_box(point3(-3.0, 0.0, 0.0));
         let direction = black_box(vec3(1.0, 0.0, 0.0));
         let wl = black_box(500.0);
-        bench.iter(|| Ray::new(origin, direction, wl, 0.0) );
+        bench.iter(|| black_box(Ray::new(origin, direction, wl, 0.0)) );
     }
 }

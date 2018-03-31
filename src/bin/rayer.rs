@@ -42,41 +42,58 @@ use random::*;
 use texture::Texture;
 
 fn color<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool) -> Xyz<E, f32> {
-    let refl = reflectance(r, world, render_sky);
-    color::xyz_from_wavelength(r.wl) * refl
+    let mut res = vec![0.0; r.wl.len()];
+    let mut attenuation = vec![1.0; r.wl.len()];
+    let wls = r.wl.clone();
+    reflectance(r, world, render_sky, res.as_mut_slice(), attenuation.as_mut_slice(), 0);
+
+    let mut color = Xyz::with_wp(0.0, 0.0, 0.0);
+    for (&refl, &wl) in res.iter().zip(wls.iter()) {
+        color = color + color::xyz_from_wavelength(wl) * refl;
+    }
+    return color*(wls.len() as f32).recip();
 }
 
-fn reflectance<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool) -> f32 {
-    let mut r = r;
-    let mut res = 0.0;
-    let mut attenuation_acc = 1.0;
-    for _ in 0..50 {
-        let rec = world.hit(r, f32::sqrt(f32::epsilon()), f32::max_value());
-        match rec {
-            Some(rec) => {
-                let mat = rec.texture.value(rec.uv);
-                let mat_res = mat.scatter(r, rec);
-                res += mat_res.emittance*attenuation_acc;
+fn reflectance<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool, res: &mut[f32], attenuation_acc: &mut[f32], depth: u8) {
+    if depth>50 {
+        return;
+    }
+    assert_eq!(r.wl.len(), res.len());
+    assert_eq!(res.len(), attenuation_acc.len());
+    let rec = world.hit(&r, f32::sqrt(f32::epsilon()), f32::max_value());
+    match rec {
+        Some(rec) => {
+            let mat = rec.texture.value(rec.uv);
+            let mat_results = mat.scatter(r, rec);
+            let mut done_results = 0;
+            for mat_res in mat_results.into_iter() {
+                let len = mat_res.emittance.len();
+                let res = &mut res[done_results..done_results+len];
+                let attenuation_acc = &mut attenuation_acc[done_results..done_results+len];
+                for (i, (emittance, attenuation)) in mat_res.emittance.iter().enumerate() {
+                    res[i] += emittance*attenuation_acc[i];
+                    attenuation_acc[i] *= attenuation;
+                }
                 match mat_res.reflection {
-                    None => { return res; },
-                    Some((attenuation, ray)) => {
-                        r = ray;
-                        attenuation_acc *= attenuation;
+                    None => {},
+                    Some(ray) => {
+                        reflectance(ray, world, render_sky, res, attenuation_acc, depth+1)
                     }
                 }
-            },
-            None => {
-                if render_sky {
-                    let unit_direction = r.direction.normalize();
-                    let t: f32 = (unit_direction.y + 1.0)*0.5;
-                    let rgb = Rgb::with_wp(1.0, 1.0, 1.0)*(1.0-t) + Rgb::with_wp(0.5, 0.7, 1.0)*t;
-                    res += rgb.reflect(r.wl)*attenuation_acc;
+                done_results += len;
+            }
+        },
+        None => {
+            if render_sky {
+                let unit_direction = r.direction.normalize();
+                let t: f32 = (unit_direction.y + 1.0)*0.5;
+                let rgb = Rgb::with_wp(1.0, 1.0, 1.0)*(1.0-t) + Rgb::with_wp(0.5, 0.7, 1.0)*t;
+                for (i, v) in res.iter_mut().enumerate() {
+                    *v += rgb.reflect(r.wl[i])*attenuation_acc[i];
                 }
-                return res;
             }
         }
     }
-    return res;
 }
 
 pub struct Scene {
@@ -535,6 +552,8 @@ fn main() {
         }
         pb.finish_print("done");
     });
+    let wl_chunks = 3;
+    let wl_step = (wl_high-wl_low)/(wl_chunks as f32);
     let _res: () =
         (0..num_samples)
         .into_par_iter()
@@ -545,10 +564,14 @@ fn main() {
                 .map(|n| {
                     let i = n%width;
                     let j = height-(n/width);
-                    let wl = gen_range(wl_low, wl_high);
+                    let wl_0 = gen_range(wl_low, wl_low+wl_step);
+                    let wls =
+                        (0..wl_chunks)
+                        .map(|i| wl_0+(i as f32)*wl_step)
+                        .collect();
                     let u = ((i as f32) + next_f32()) / (width as f32);
                     let v = ((j as f32) + next_f32()) / (height as f32);
-                    let r = cam.get_ray(u, v, wl);
+                    let r = cam.get_ray(u, v, wls);
                     color(r, &world, render_sky)*3.0
                 }).collect();
             sender.send(sample).unwrap();

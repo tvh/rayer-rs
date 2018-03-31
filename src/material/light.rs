@@ -16,12 +16,13 @@ impl<C: HasReflectance> DiffuseLight<C> {
 }
 
 impl<C: HasReflectance> Material for DiffuseLight<C> {
-    fn scatter(&self, r_in: Ray, _hit_record: HitRecord) -> ScatterResult {
-        let emittance = self.light.reflect(r_in.wl);
-        ScatterResult {
+    fn scatter(&self, r_in: Ray, _hit_record: HitRecord) -> Vec<ScatterResult> {
+        let emittance =
+            r_in.wl.iter().map(|&wl| (self.light.reflect(wl),0.0)).collect();
+        vec![ScatterResult {
             emittance,
             reflection: None,
-        }
+        }]
     }
 }
 

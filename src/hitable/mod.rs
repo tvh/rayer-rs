@@ -63,7 +63,7 @@ impl AABB {
 
     const WIGGLE_FACTOR: f32 = 0.0001;
 
-    pub fn intersects_2(&self, second: &Self, r: Ray, t0: f32, t1: f32) -> (Option<(f32, f32)>, Option<(f32, f32)>) {
+    pub fn intersects_2(&self, second: &Self, r: &Ray, t0: f32, t1: f32) -> (Option<(f32, f32)>, Option<(f32, f32)>) {
         let bounds_vec_xy = f32x8::new(
             self.bounds[r.sign.x as usize].x,
             self.bounds[1-r.sign.x as usize].x,
@@ -232,7 +232,7 @@ pub trait Hitable: Send + Sync {
         }
     }
     fn bbox(&self) -> AABB;
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
 impl<T: AsRef<Hitable> + Sync + Send> Hitable for T {
@@ -242,7 +242,7 @@ impl<T: AsRef<Hitable> + Sync + Send> Hitable for T {
     fn bbox(&self) -> AABB {
         self.as_ref().bbox()
     }
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         self.as_ref().hit(r, t_min, t_max)
     }
 }

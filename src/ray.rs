@@ -2,11 +2,11 @@ use euclid::*;
 
 pub struct Inverted;
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Ray {
     pub origin: Point3D<f32>,
     pub direction: Vector3D<f32>,
-    pub wl: f32,
+    pub wl: Vec<f32>,
     pub inv_direction: TypedVector3D<f32, Inverted>,
     pub sign: TypedVector3D<bool, Inverted>,
     pub ti: f32,
@@ -14,7 +14,7 @@ pub struct Ray {
 
 impl Ray
 {
-    pub fn new(origin: Point3D<f32>, direction: Vector3D<f32>, wl: f32, ti: f32) -> Ray {
+    pub fn new(origin: Point3D<f32>, direction: Vector3D<f32>, wl: Vec<f32>, ti: f32) -> Ray {
         let inv_direction =
             vec3(direction.x.recip(), direction.y.recip(), direction.z.recip());
         let sign =
@@ -22,7 +22,7 @@ impl Ray
         Ray{origin, direction, wl, inv_direction, sign, ti}
     }
 
-    pub fn point_at_parameter(self, t: f32) -> Point3D<f32> {
+    pub fn point_at_parameter(&self, t: f32) -> Point3D<f32> {
         self.origin + self.direction*t
     }
 }

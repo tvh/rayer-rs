@@ -8,14 +8,17 @@ use ray::Ray;
 use hitable::*;
 use random::*;
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct ScatterResult {
-    pub emittance: f32,
-    pub reflection: Option<(f32, Ray)>,
+    pub emittance: Vec<(f32,f32)>,
+    pub reflection: Option<Ray>,
 }
 
 pub trait Material: Debug + Send + Sync {
-    fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> ScatterResult;
+    /// Calculate the interaction of a an incoming ray with the material.
+    /// If the ray has multiple wavelenths associated, this can return multiple
+    /// results. The counts from the results should sum up to that number.
+    fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> Vec<ScatterResult>;
 }
 
 impl<'a, 'b> PartialEq<Material+'b> for Material+'a {
@@ -36,11 +39,11 @@ impl<C: HasReflectance> Lambertian<C> {
 }
 
 impl<C: HasReflectance> Material for Lambertian<C> {
-    fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
+    fn scatter(&self, r_in: Ray, rec: HitRecord) -> Vec<ScatterResult> {
         let direction = rec.normal + rand_in_unit_sphere();
+        let emittance = r_in.wl.iter().map(|&wl| (0.0,self.albedo.reflect(wl))).collect();
         let ray = Ray::new(rec.p, direction, r_in.wl, r_in.ti);
-        let attenuation = self.albedo.reflect(r_in.wl);
-        ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
+        vec![ScatterResult{ emittance, reflection: Some(ray) }]
     }
 }
 
@@ -64,12 +67,12 @@ impl<R: HasReflectance> Metal<R> {
 }
 
 impl<R: HasReflectance> Material for Metal<R> {
-    fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> ScatterResult {
+    fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> Vec<ScatterResult> {
         let reflected = reflect(r_in.direction, hit_record.normal);
-        let scattered =  reflected + rand_in_unit_sphere()*self.fuzz;
+        let scattered = reflected + rand_in_unit_sphere()*self.fuzz;
+        let emittance = r_in.wl.iter().map(|&wl| (0.0,self.albedo.reflect(wl))).collect();
         let ray = Ray::new(hit_record.p, scattered, r_in.wl, r_in.ti);
-        let attenuation = self.albedo.reflect(r_in.wl);
-        ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}
+        vec![ScatterResult{ emittance, reflection: Some(ray) }]
     }
 }
 
@@ -141,42 +144,47 @@ fn schlick(cosine: f32, ref_idx: f32) -> f32 {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
-        let wl_2 = r_in.wl*r_in.wl;
-        let ref_idx_squared =
-            1.0 +
-            self.b1*wl_2/(wl_2-self.c1) +
-            self.b2*wl_2/(wl_2-self.c2) +
-            self.b3*wl_2/(wl_2-self.c3);
-        let ref_idx = ref_idx_squared.sqrt();
-        let (outward_normal, ni_over_nt, cosine) =
-            if r_in.direction.dot(rec.normal) > 0.0 {
-                (-rec.normal,
-                 ref_idx,
-                 ref_idx * r_in.direction.dot(rec.normal) / r_in.direction.length()
-                )
-            } else {
-                (rec.normal,
-                 ref_idx.recip(),
-                 -r_in.direction.dot(rec.normal) / r_in.direction.length()
-                )
-            };
-        let refracted = refract(r_in.direction, outward_normal, ni_over_nt);
-        let scattered = match refracted {
-            None => {
-                let reflected = reflect(r_in.direction, rec.normal);
-                Ray::new(rec.p, reflected, r_in.wl, r_in.ti)
-            },
-            Some(refracted) => {
-                if next_f32() < schlick(cosine, ref_idx) {
-                    let reflected = reflect(r_in.direction, rec.normal);
-                    Ray::new(rec.p, reflected, r_in.wl, r_in.ti)
+    fn scatter(&self, r_in: Ray, rec: HitRecord) -> Vec<ScatterResult> {
+        r_in.wl
+        .iter()
+        .map(|&wl| {
+            let wl_2 = wl*wl;
+            let ref_idx_squared =
+                1.0 +
+                self.b1*wl_2/(wl_2-self.c1) +
+                self.b2*wl_2/(wl_2-self.c2) +
+                self.b3*wl_2/(wl_2-self.c3);
+            let ref_idx = ref_idx_squared.sqrt();
+            let (outward_normal, ni_over_nt, cosine) =
+                if r_in.direction.dot(rec.normal) > 0.0 {
+                    (-rec.normal,
+                     ref_idx,
+                     ref_idx * r_in.direction.dot(rec.normal) / r_in.direction.length()
+                    )
                 } else {
-                    Ray::new(rec.p, refracted, r_in.wl, r_in.ti)
+                    (rec.normal,
+                     ref_idx.recip(),
+                     -r_in.direction.dot(rec.normal) / r_in.direction.length()
+                    )
+                };
+            let refracted = refract(r_in.direction, outward_normal, ni_over_nt);
+            let scattered = match refracted {
+                None => {
+                    let reflected = reflect(r_in.direction, rec.normal);
+                    Ray::new(rec.p, reflected, vec![wl], r_in.ti)
+                },
+                Some(refracted) => {
+                    if next_f32() < schlick(cosine, ref_idx) {
+                        let reflected = reflect(r_in.direction, rec.normal);
+                        Ray::new(rec.p, reflected, vec![wl], r_in.ti)
+                    } else {
+                        Ray::new(rec.p, refracted, vec![wl], r_in.ti)
+                    }
                 }
-            }
-        };
-        ScatterResult{ emittance: 0.0, reflection: Some((1.0, scattered)) }
+            };
+            ScatterResult{ emittance: vec![(0.0,1.0)], reflection: Some(scattered) }
+        })
+        .collect()
 
     }
 }

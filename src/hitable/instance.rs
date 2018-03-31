@@ -49,12 +49,12 @@ impl<H: Hitable> Hitable for Translate<H> {
         }
     }
 
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let r = Ray {
             origin: r.origin-self.offset,
-            ..r
+            ..r.clone()
         };
-        let res = self.object.hit(r, t_min, t_max);
+        let res = self.object.hit(&r, t_min, t_max);
         match res {
             None => None,
             Some(rec) => {
@@ -79,7 +79,7 @@ impl<H: Hitable> Hitable for RotateY<H> {
     fn bbox(&self) -> AABB {
         self.bbox
     }
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let mut origin = r.origin;
         origin.x = self.cos_theta*r.origin.x - self.sin_theta*r.origin.z;
         origin.z = self.sin_theta*r.origin.x + self.cos_theta*r.origin.z;
@@ -90,10 +90,10 @@ impl<H: Hitable> Hitable for RotateY<H> {
             Ray::new(
                 origin,
                 direction,
-                r.wl,
+                r.wl.clone(),
                 r.ti
             );
-        match self.object.hit(rotated_r, t_min, t_max) {
+        match self.object.hit(&rotated_r, t_min, t_max) {
             None => None,
             Some(rec) => {
                 let mut p = rec.p;
@@ -173,7 +173,7 @@ impl<H: Hitable> Hitable for Scale<H> {
         self.bbox
     }
 
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let scaled_origin = point3(
             r.origin.x*self.inv_scale.x,
             r.origin.y*self.inv_scale.y,
@@ -184,9 +184,9 @@ impl<H: Hitable> Hitable for Scale<H> {
             r.direction.y*self.inv_scale.y,
             r.direction.z*self.inv_scale.z,
         );
-        let scaled_r = Ray::new(scaled_origin, scaled_direction, r.wl, r.ti);
+        let scaled_r = Ray::new(scaled_origin, scaled_direction, r.wl.clone(), r.ti);
 
-        match self.object.hit(scaled_r, t_min, t_max) {
+        match self.object.hit(&scaled_r, t_min, t_max) {
             None => None,
             Some(rec) => {
                 let p = point3(

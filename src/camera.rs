@@ -40,7 +40,7 @@ impl Camera {
 }
 
 impl Camera {
-    pub fn get_ray(&self, s: f32, t: f32, wl: f32) -> Ray {
+    pub fn get_ray(&self, s: f32, t: f32, wl: Vec<f32>) -> Ray {
         let rd = rand_in_unit_disk()*self.lens_radius;
         let ti = gen_range(self.t0, self.t1);
         let offset = self.u*rd.x + self.v*rd.y;

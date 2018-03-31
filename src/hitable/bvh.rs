@@ -111,9 +111,9 @@ impl<H: Hitable> Hitable for BVH<H> {
         }
     }
 
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let &BVH { ref nodes, ref items } = self;
-        fn go<'a, H: Hitable>(items: &'a[H], nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
+        fn go<'a, H: Hitable>(items: &'a[H], nodes: &[Node], r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
             match nodes {
                 &[] => None,
                 &[Node { next: Next::Bin{left_length}, ..}, ref left..] => {

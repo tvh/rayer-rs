@@ -66,7 +66,7 @@ impl Hitable for Sphere {
         };
         bounds0.merge(bounds1)
     }
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let center = self.center0 + (self.center1 - self.center0) * ((r.ti-self.t0) / (self.t1-self.t0));
         let oc = r.origin - center;
         let a = r.direction.dot(r.direction);

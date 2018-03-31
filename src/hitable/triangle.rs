@@ -71,7 +71,7 @@ impl Hitable for Triangle {
         }
         AABB { bounds: [low, high] }
     }
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         // find vectors for two edges sharing vert0
         let edge1 = self.vert.1 - self.vert.0;
         let edge2 = self.vert.2 - self.vert.0;
@@ -206,7 +206,7 @@ impl Hitable for Mesh {
     fn bbox(&self) -> AABB {
         self.data.bbox()
     }
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         self.data.hit(r, t_min, t_max)
     }
 }

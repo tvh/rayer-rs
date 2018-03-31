@@ -75,6 +75,13 @@ impl AABB {
             second.bounds[1-r.sign.y as usize].y,
         );
 
+        let bounds_vec_z = f32x4::new(
+            self.bounds[r.sign.z as usize].z,
+            self.bounds[1-r.sign.z as usize].z,
+            second.bounds[r.sign.z as usize].z,
+            second.bounds[1-r.sign.z as usize].z,
+        );
+
         let origin_x = r.origin.x;
         let origin_y = r.origin.y;
         let origin_xy = f32x8::new(
@@ -87,6 +94,7 @@ impl AABB {
             origin_y,
             origin_y,
         );
+        let origin_z = f32x4::splat(r.origin.z);
 
         let inv_direction_x = r.inv_direction.x;
         let inv_direction_y = r.inv_direction.y;
@@ -100,23 +108,33 @@ impl AABB {
             inv_direction_y,
             inv_direction_y,
         );
+        let inv_direction_z = f32x4::splat(r.inv_direction.z);
 
         let res_vec_xy = (bounds_vec_xy - origin_xy) * inv_direction_xy;
+        let res_vec_z = (bounds_vec_z - origin_z) * inv_direction_z;
 
-        let mut tmin_0 = unsafe {
+        let tmin_0 = unsafe {
             let mut tmin = res_vec_xy.extract_unchecked(0);
             let tymin = res_vec_xy.extract_unchecked(4);
             if tymin>tmin {
                 tmin = tymin;
             }
+            let tzmin = res_vec_z.extract_unchecked(0);
+            if tzmin>tmin {
+                tmin = tzmin;
+            }
             tmin
         };
 
-        let mut tmax_0 = unsafe {
+        let tmax_0 = unsafe {
             let mut tmax = res_vec_xy.extract_unchecked(1);
             let tymax = res_vec_xy.extract_unchecked(5);
             if tymax<tmax {
                 tmax = tymax;
+            }
+            let tzmax = res_vec_z.extract_unchecked(1);
+            if tzmax<tmax {
+                tmax = tzmax;
             }
             tmax
         };
@@ -125,36 +143,32 @@ impl AABB {
             if (tmin_0>tmax_0+AABB::WIGGLE_FACTOR) || (tmin_0 > t1) || (tmax_0 < t0) {
                 None
             } else {
-                let tzmin = (self.bounds[r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
-                let tzmax = (self.bounds[1-r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
-                if tzmin>tmin_0 {
-                    tmin_0 = tzmin;
-                }
-                if tzmax<tmax_0 {
-                    tmax_0 = tzmax;
-                }
-                if (tmin_0<tmax_0+AABB::WIGGLE_FACTOR) && (tmin_0 < t1) && (tmax_0 > t0) {
-                    Some((tmin_0, tmax_0))
-                } else {
-                    None
-                }
+                Some((tmin_0, tmax_0))
             }
         };
 
-        let mut tmin_1 = unsafe {
+        let tmin_1 = unsafe {
             let mut tmin = res_vec_xy.extract_unchecked(2);
             let tymin = res_vec_xy.extract_unchecked(6);
             if tymin>tmin {
                 tmin = tymin;
             }
+            let tzmin = res_vec_z.extract_unchecked(2);
+            if tzmin>tmin {
+                tmin = tzmin;
+            }
             tmin
         };
 
-        let mut tmax_1 = unsafe {
+        let tmax_1 = unsafe {
             let mut tmax = res_vec_xy.extract_unchecked(3);
             let tymax = res_vec_xy.extract_unchecked(7);
             if tymax<tmax {
                 tmax = tymax;
+            }
+            let tzmax = res_vec_z.extract_unchecked(3);
+            if tzmax<tmax {
+                tmax = tzmax;
             }
             tmax
         };
@@ -163,19 +177,7 @@ impl AABB {
             if (tmin_1>tmax_1+AABB::WIGGLE_FACTOR) || (tmin_1 > t1) || (tmax_1 < t0) {
                 None
             } else {
-                let tzmin = (second.bounds[r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
-                let tzmax = (second.bounds[1-r.sign.z as usize].z - r.origin.z) * r.inv_direction.z;
-                if tzmin>tmin_1 {
-                    tmin_1 = tzmin;
-                }
-                if tzmax<tmax_1 {
-                    tmax_1 = tzmax;
-                }
-                if (tmin_1<tmax_1+AABB::WIGGLE_FACTOR) && (tmin_1 < t1) && (tmax_1 > t0) {
-                    Some((tmin_1, tmax_1))
-                } else {
-                    None
-                }
+                Some((tmin_1, tmax_1))
             }
         };
 

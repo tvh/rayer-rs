@@ -3,6 +3,12 @@ use hitable::*;
 use ray::*;
 use num_traits::FloatConst;
 
+#[derive(Debug, Clone)]
+struct Translate<H: Hitable> {
+    pub object: H,
+    pub offset: Vector3D<f32>,
+}
+
 /// Translate a given object
 ///
 /// ```
@@ -15,22 +21,17 @@ use num_traits::FloatConst;
 /// # use rayer::texture::*;
 /// # use rayer::material::*;
 /// # use rayer::hitable::*;
-/// # use rayer::hitable::instance::Translate;
+/// # use rayer::hitable::instance::translate;
 /// # use rayer::hitable::triangle::axis_aligned_cuboid;
 /// #
 /// # let offset = vec3(1.0, 2.0, 3.0);
 /// # let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
 /// # let object = axis_aligned_cuboid(point3(-10.0, -100.0, -1000.0), point3(10.0, 100.0, 1000.0), texture);
-/// let translated_object = Translate { offset, object: object.clone() };
-/// assert_eq!(translated_object.bbox().bounds[0], object.bbox().bounds[0]+offset);
-/// assert_eq!(translated_object.bbox().bounds[1], object.bbox().bounds[1]+offset);
+/// let object_bbox = object.bbox();
+/// let translated_object = translate(object, offset);
+/// assert_eq!(translated_object.bbox().bounds[0], object_bbox.bounds[0]+offset);
+/// assert_eq!(translated_object.bbox().bounds[1], object_bbox.bounds[1]+offset);
 /// ```
-#[derive(Debug, Clone)]
-struct Translate<H: Hitable> {
-    pub object: H,
-    pub offset: Vector3D<f32>,
-}
-
 pub fn translate<H: Hitable>(
     object: H,
     offset: Vector3D<f32>,

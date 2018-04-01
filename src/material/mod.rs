@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use euclid::Vector3D;
+use euclid::*;
 
 pub mod light;
 
@@ -37,7 +37,16 @@ impl<C: HasReflectance> Lambertian<C> {
 
 impl<C: HasReflectance> Material for Lambertian<C> {
     fn scatter(&self, r_in: Ray, rec: HitRecord) -> ScatterResult {
-        let direction = rec.normal + rand_in_unit_sphere();
+        let u = if rec.normal.x.abs()<0.5 {
+            vec3(0.0,-rec.normal.z, rec.normal.y).normalize()
+        } else {
+            vec3(-rec.normal.z, 0.0, rec.normal.x).normalize()
+        };
+        let w = rec.normal.cross(u);
+        let p = rand_in_unit_disk();
+        let z = f32::sqrt(1.0-p.square_length());
+        let direction = u*p.x + w*p.y + rec.normal*z;
+
         let ray = Ray::new(rec.p, direction, r_in.wl, r_in.ti);
         let attenuation = self.albedo.reflect(r_in.wl);
         ScatterResult{ emittance: 0.0, reflection: Some((attenuation, ray))}

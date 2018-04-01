@@ -13,7 +13,7 @@ where T: Float + Rand
     let mut gen_component = || T::rand(&mut rng).mul_add(T::one()+T::one(), -T::one());
     while {
         p = vec3(gen_component(), gen_component(), gen_component());
-        p.dot(p) >= T::one()
+        p.square_length() >= T::one()
     } {}
     p
 }
@@ -26,7 +26,7 @@ where T: Float + Rand
     let mut gen_component = || T::rand(&mut rng).mul_add(T::one()+T::one(), -T::one());
     while {
         p = vec2(gen_component(), gen_component());
-        p.dot(p) >= T::one()
+        p.square_length() >= T::one()
     } {}
     p
 }

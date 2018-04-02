@@ -6,6 +6,7 @@
 #![feature(test)]
 #![feature(underscore_lifetimes)]
 #![plugin(quickcheck_macros)]
+extern crate arrayvec;
 extern crate core;
 extern crate clap;
 extern crate cpuprofiler;

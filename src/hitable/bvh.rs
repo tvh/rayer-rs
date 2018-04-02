@@ -2,6 +2,7 @@ use hitable::*;
 use pdqselect::select_by;
 use decorum::Ordered;
 use std::ptr;
+use arrayvec::*;
 
 #[derive(Debug)]
 pub struct BVH<H: Hitable> {
@@ -122,7 +123,7 @@ impl<H: Hitable> Hitable for BVH<H> {
         let mut closest_so_far = t_max;
 
         // The nodes are arranged in a binary tree. This should be more than enough.
-        let mut stack = Vec::with_capacity(64);
+        let mut stack: ArrayVec<[_;64]> = ArrayVec::new();
         stack.push(0);
 
         while let Some(i) = stack.pop() {

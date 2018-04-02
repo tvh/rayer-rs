@@ -7,6 +7,7 @@ authors = ["Timo von Holtz <tvh@tvholtz.de>"]
 debug = true
 
 [dependencies]
+arrayvec = "0.4.7"
 clap = "2.29.2"
 cpuprofiler = "0.0.3"
 crossbeam-channel = "0.1.2"

@@ -129,7 +129,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                             let mut closest_so_far = t_max;
 
                             let (first, (second, second_range)) =
-                                if left_range.0<right_range.0 {
+                                if left_range<right_range {
                                     (left, (right, right_range))
                                 } else {
                                     (right, (left, left_range))
@@ -143,7 +143,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                                 }
                             }
 
-                            if closest_so_far<second_range.0 {
+                            if closest_so_far<second_range {
                                 return closest_match;
                             }
 

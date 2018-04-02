@@ -25,7 +25,7 @@ pub struct AABB {
 }
 
 impl AABB {
-    pub fn intersects(&self, r: Ray, t0: f32, t1: f32) -> Option<(f32, f32)> {
+    pub fn intersects(&self, r: Ray, t0: f32, t1: f32) -> Option<f32> {
         match self {
             &AABB { bounds } => {
                 let mut tmin = (bounds[r.sign.x as usize].x - r.origin.x) * r.inv_direction.x;
@@ -53,7 +53,7 @@ impl AABB {
                     tmax = tzmax;
                 }
                 if (tmin < t1) && (tmax > t0) {
-                    Some((tmin, tmax))
+                    Some(tmin)
                 } else {
                     None
                 }
@@ -63,7 +63,7 @@ impl AABB {
 
     const WIGGLE_FACTOR: f32 = 0.0001;
 
-    pub fn intersects_2(&self, second: &Self, r: Ray, t0: f32, t1: f32) -> (Option<(f32, f32)>, Option<(f32, f32)>) {
+    pub fn intersects_2(&self, second: &Self, r: Ray, t0: f32, t1: f32) -> (Option<f32>, Option<f32>) {
         let bounds_vec_xy = f32x8::new(
             self.bounds[r.sign.x as usize].x,
             self.bounds[1-r.sign.x as usize].x,
@@ -143,7 +143,7 @@ impl AABB {
             if (tmin_0>tmax_0+AABB::WIGGLE_FACTOR) || (tmin_0 > t1) || (tmax_0 < t0) {
                 None
             } else {
-                Some((tmin_0, tmax_0))
+                Some(tmin_0)
             }
         };
 
@@ -177,7 +177,7 @@ impl AABB {
             if (tmin_1>tmax_1+AABB::WIGGLE_FACTOR) || (tmin_1 > t1) || (tmax_1 < t0) {
                 None
             } else {
-                Some((tmin_1, tmax_1))
+                Some(tmin_1)
             }
         };
 

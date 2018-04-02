@@ -113,57 +113,56 @@ impl<H: Hitable> Hitable for BVH<H> {
 
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let &BVH { ref nodes, ref items } = self;
-        fn go<'a, H: Hitable>(items: &'a[H], nodes: &[Node], r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord<'a>> {
-            match nodes {
-                &[] => None,
-                &[Node { next: Next::Bin{left_length}, ..}, ref left..] => {
-                    let right = &left[left_length..];
-                    let (left_hit, right_hit) = left[0].bbox.intersects_2(&right[0].bbox, r, t_min, t_max);
+        // Avoid bounds checks later
+        if nodes.len()==0 {
+            return None;
+        }
+
+        let mut closest_match = None;
+        let mut closest_so_far = t_max;
+
+        // The nodes are arranged in a binary tree. This should be more than enough.
+        let mut stack = Vec::with_capacity(64);
+        stack.push(0);
+
+        while let Some(i) = stack.pop() {
+            match unsafe { nodes.get_unchecked(i) } {
+                &Node{ next: Next::Bin{left_length}, ..} => {
+                    let left_idx = i + 1;
+                    let right_idx = left_idx + left_length;
+                    let left = unsafe { nodes.get_unchecked(left_idx) };
+                    let right = unsafe { nodes.get_unchecked(right_idx) };
+                    let (left_hit, right_hit) = left.bbox.intersects_2(&right.bbox, r, t_min, closest_so_far);
 
                     match (left_hit, right_hit) {
-                        (None, None) => None,
-                        (Some(_), None) => go(items, left, r, t_min, t_max),
-                        (None, Some(_)) => go(items, right, r, t_min, t_max),
+                        (None, None) => (),
+                        (Some(_), None) => stack.push(left_idx),
+                        (None, Some(_)) => stack.push(right_idx),
                         (Some(left_range), Some(right_range)) => {
-                            let mut closest_match = None;
-                            let mut closest_so_far = t_max;
-
-                            let (first, (second, second_range)) =
-                                if left_range<right_range {
-                                    (left, (right, right_range))
-                                } else {
-                                    (right, (left, left_range))
-                                };
-
-                            match go(items, first, r, t_min, t_max) {
-                                None => (),
-                                Some(hit) => {
-                                    closest_so_far = hit.t;
-                                    closest_match = Some(hit);
-                                }
-                            }
-
-                            if closest_so_far<second_range {
-                                return closest_match;
-                            }
-
-                            match go(items, second, r, t_min, closest_so_far) {
-                                None => (),
-                                Some(hit) => {
-                                    closest_match = Some(hit);
-                                }
-                            }
-
-                            closest_match
+                            if left_range<right_range {
+                                stack.push(right_idx);
+                                stack.push(left_idx);
+                            } else {
+                                stack.push(left_idx);
+                                stack.push(right_idx);
+                            };
                         }
                     }
                 },
-                &[Node {next: Next::Tip{hitable}, ..}, ..] => {
-                    items[hitable].hit(r, t_min, t_max)
+                &Node {next: Next::Tip{hitable}, ..} => {
+                    let res = items[hitable].hit(r, t_min, closest_so_far);
+                    match res {
+                        None => (),
+                        Some(hit) => {
+                            closest_so_far = hit.t;
+                            closest_match = Some(hit);
+                        }
+                    }
                 },
             }
         }
-        go(items.as_slice(), nodes.as_slice(), r, t_min, t_max)
+
+        closest_match
     }
 }
 

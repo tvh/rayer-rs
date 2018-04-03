@@ -1,17 +1,6 @@
 use palette::*;
 use palette::white_point::E;
-use super::binned_spectrum::{BinnedSpectrum, BinData};
-
-#[derive(Debug)]
-pub struct Bin36;
-impl BinData for Bin36 {
-    type Spectrum = [f32; 36];
-    const WL_0: f32 = 360.0;
-    const BIN_WIDTH: f32 = 10.0;
-}
-
-/// Values from "An RGB-to-spectrum conversion for reflectances"
-type ColorSpectrum = BinnedSpectrum<Bin36>;
+use super::binned_spectrum::{ColorSpectrum};
 
 static WHITE_SPECTRUM: ColorSpectrum = ColorSpectrum::new([
     0.9995030404215534,

@@ -15,6 +15,17 @@ pub trait BinData: Send + Sync {
     const BIN_WIDTH: f32;
 }
 
+#[derive(Debug)]
+pub struct Bin36;
+impl BinData for Bin36 {
+    type Spectrum = [f32; 36];
+    const WL_0: f32 = 360.0;
+    const BIN_WIDTH: f32 = 10.0;
+}
+
+/// The standard spectrum type used
+pub type ColorSpectrum = BinnedSpectrum<Bin36>;
+
 /// A binned representation of the visible spectrum.
 /// Values outside this range are clamped to the nearest index.
 pub struct BinnedSpectrum<T: BinData> {

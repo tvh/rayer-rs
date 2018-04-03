@@ -17,10 +17,19 @@ pub trait BinData: Send + Sync {
 
 /// A binned representation of the visible spectrum.
 /// Values outside this range are clamped to the nearest index.
-#[derive(PartialEq)]
 pub struct BinnedSpectrum<T: BinData> {
     spectrum: T::Spectrum,
     marker: PhantomData<T>
+}
+
+impl<T: BinData> PartialEq for BinnedSpectrum<T> {
+    fn eq(&self, right: &Self) -> bool {
+        let mut res = true;
+        for (&x,&y) in self.spectrum.as_slice().iter().zip(right.spectrum.as_slice().iter()) {
+            res &= x==y;
+        }
+        return res;
+    }
 }
 
 impl<T: BinData> Debug for BinnedSpectrum<T> {

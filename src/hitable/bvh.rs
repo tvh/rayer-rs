@@ -126,6 +126,8 @@ impl<H: Hitable> Hitable for BVH<H> {
         let mut stack: ArrayVec<[_;64]> = ArrayVec::new();
         stack.push(0);
 
+        let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(r);
+
         while let Some(i) = stack.pop() {
             match unsafe { nodes.get_unchecked(i) } {
                 &Node{ next: Next::Bin{left_length}, ..} => {
@@ -133,7 +135,7 @@ impl<H: Hitable> Hitable for BVH<H> {
                     let right_idx = left_idx + left_length;
                     let left = unsafe { nodes.get_unchecked(left_idx) };
                     let right = unsafe { nodes.get_unchecked(right_idx) };
-                    let (left_hit, right_hit) = left.bbox.intersects_2(&right.bbox, r, t_min, closest_so_far);
+                    let (left_hit, right_hit) = left.bbox.intersects_2(&right.bbox, sign, origin_vec, inv_direction_vec, t_min, closest_so_far);
 
                     match (left_hit, right_hit) {
                         (None, None) => (),

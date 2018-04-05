@@ -7,7 +7,7 @@ use num_traits::Float;
 use euclid::*;
 use std::simd::*;
 
-use ray::Ray;
+use ray::*;
 use texture::*;
 
 #[derive(PartialEq, Debug)]
@@ -61,82 +61,70 @@ impl AABB {
         }
     }
 
+    pub fn prepare_intersect(r: Ray) -> (f32x4, f32x4, TypedVector3D<bool, Inverted>) {
+        let origin_vec = f32x4::new(
+            r.origin.x,
+            r.origin.y,
+            r.origin.z,
+            r.origin.z,
+        );
+
+        let inv_direction_vec = f32x4::new(
+            r.inv_direction.x,
+            r.inv_direction.y,
+            r.inv_direction.z,
+            r.inv_direction.z,
+        );
+
+        return (origin_vec, inv_direction_vec, r.sign)
+    }
+
     const WIGGLE_FACTOR: f32 = 0.0001;
 
-    pub fn intersects_2(&self, second: &Self, r: Ray, t0: f32, t1: f32) -> (Option<f32>, Option<f32>) {
-        let bounds_vec_xy = f32x8::new(
-            self.bounds[r.sign.x as usize].x,
-            self.bounds[1-r.sign.x as usize].x,
-            second.bounds[r.sign.x as usize].x,
-            second.bounds[1-r.sign.x as usize].x,
-            self.bounds[r.sign.y as usize].y,
-            self.bounds[1-r.sign.y as usize].y,
-            second.bounds[r.sign.y as usize].y,
-            second.bounds[1-r.sign.y as usize].y,
-        );
-
-        let bounds_vec_z = f32x4::new(
-            self.bounds[r.sign.z as usize].z,
-            self.bounds[1-r.sign.z as usize].z,
-            second.bounds[r.sign.z as usize].z,
-            second.bounds[1-r.sign.z as usize].z,
-        );
-
-        let origin_x = r.origin.x;
-        let origin_y = r.origin.y;
-        let origin_xy = f32x8::new(
-            origin_x,
-            origin_x,
-            origin_x,
-            origin_x,
-            origin_y,
-            origin_y,
-            origin_y,
-            origin_y,
-        );
-        let origin_z = f32x4::splat(r.origin.z);
-
-        let inv_direction_x = r.inv_direction.x;
-        let inv_direction_y = r.inv_direction.y;
-        let inv_direction_xy = f32x8::new(
-            inv_direction_x,
-            inv_direction_x,
-            inv_direction_x,
-            inv_direction_x,
-            inv_direction_y,
-            inv_direction_y,
-            inv_direction_y,
-            inv_direction_y,
-        );
-        let inv_direction_z = f32x4::splat(r.inv_direction.z);
-
-        let res_vec_xy = (bounds_vec_xy - origin_xy) * inv_direction_xy;
-        let res_vec_z = (bounds_vec_z - origin_z) * inv_direction_z;
-
-        let tmin_0 = unsafe {
-            let mut tmin = res_vec_xy.extract_unchecked(0);
-            let tymin = res_vec_xy.extract_unchecked(4);
-            if tymin>tmin {
-                tmin = tymin;
-            }
-            let tzmin = res_vec_z.extract_unchecked(0);
-            if tzmin>tmin {
-                tmin = tzmin;
-            }
-            tmin
+    #[inline(always)]
+    pub fn intersects_2(&self, second: &Self, sign: TypedVector3D<bool, Inverted>, origin_vec: f32x4, inv_direction_vec: f32x4, t0: f32, t1: f32) -> (Option<f32>, Option<f32>) {
+        let tmin_0 = {
+            let bounds_vec = f32x4::new(
+                self.bounds[sign.x as usize].x,
+                self.bounds[sign.y as usize].y,
+                self.bounds[sign.z as usize].z,
+                self.bounds[sign.z as usize].z,
+            );
+            let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
+            res_vec.max()
         };
 
-        let tmax_0 = unsafe {
-            let mut tmax = res_vec_xy.extract_unchecked(1);
-            let tymax = res_vec_xy.extract_unchecked(5);
-            if tymax<tmax {
-                tmax = tymax;
-            }
-            let tzmax = res_vec_z.extract_unchecked(1);
-            if tzmax<tmax {
-                tmax = tzmax;
-            }
-            tmax
+        let tmax_0 = {
+            let bounds_vec = f32x4::new(
+                self.bounds[1-sign.x as usize].x,
+                self.bounds[1-sign.y as usize].y,
+                self.bounds[1-sign.z as usize].z,
+                self.bounds[1-sign.z as usize].z,
+            );
+            let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
+            res_vec.min()
+        };
+
+        let tmin_1 = {
+            let bounds_vec = f32x4::new(
+                second.bounds[sign.x as usize].x,
+                second.bounds[sign.y as usize].y,
+                second.bounds[sign.z as usize].z,
+                second.bounds[sign.z as usize].z,
+            );
+            let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
+            res_vec.max()
+        };
+
+        let tmax_1 = {
+            let bounds_vec = f32x4::new(
+                second.bounds[1-sign.x as usize].x,
+                second.bounds[1-sign.y as usize].y,
+                second.bounds[1-sign.z as usize].z,
+                second.bounds[1-sign.z as usize].z,
+            );
+            let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
+            res_vec.min()
         };
 
         let res_0 = {
@@ -145,32 +133,6 @@ impl AABB {
             } else {
                 Some(tmin_0)
             }
-        };
-
-        let tmin_1 = unsafe {
-            let mut tmin = res_vec_xy.extract_unchecked(2);
-            let tymin = res_vec_xy.extract_unchecked(6);
-            if tymin>tmin {
-                tmin = tymin;
-            }
-            let tzmin = res_vec_z.extract_unchecked(2);
-            if tzmin>tmin {
-                tmin = tzmin;
-            }
-            tmin
-        };
-
-        let tmax_1 = unsafe {
-            let mut tmax = res_vec_xy.extract_unchecked(3);
-            let tymax = res_vec_xy.extract_unchecked(7);
-            if tymax<tmax {
-                tmax = tymax;
-            }
-            let tzmax = res_vec_z.extract_unchecked(3);
-            if tzmax<tmax {
-                tmax = tzmax;
-            }
-            tmax
         };
 
         let res_1 = {
@@ -271,7 +233,8 @@ mod tests {
         let t_max = f32::max_value();
         let res_1 = aabb_1.intersects(ray, t_min, t_max);
         let res_2 = aabb_2.intersects(ray, t_min, t_max);
-        assert_eq!((res_1, res_2), aabb_1.intersects_2(&aabb_2, ray, t_min, t_max));
+        let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(ray);
+        assert_eq!((res_1, res_2), aabb_1.intersects_2(&aabb_2, sign, origin_vec, inv_direction_vec, t_min, t_max));
     }
 
     #[bench]
@@ -299,7 +262,8 @@ mod tests {
         let aabb_2 = black_box(aabb_1);
         let t_min = black_box(0.0001);
         let t_max = black_box(f32::max_value());
-        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, ray, t_min, t_max)));
+        let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(ray);
+        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, sign, origin_vec, inv_direction_vec, t_min, t_max)));
     }
 
     #[bench]
@@ -309,7 +273,8 @@ mod tests {
         let aabb_2 = black_box(AABB { bounds: [point3(-3.0, -3.0, -3.0), point3(-2.0, -2.0, -2.0)] });
         let t_min = black_box(0.0001);
         let t_max = black_box(f32::max_value());
-        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, ray, t_min, t_max)));
+        let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(ray);
+        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, sign, origin_vec, inv_direction_vec, t_min, t_max)));
     }
 
     #[bench]
@@ -319,7 +284,8 @@ mod tests {
         let aabb_2 = black_box(aabb_1);
         let t_min = black_box(0.0001);
         let t_max = black_box(f32::max_value());
-        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, ray, t_min, t_max)));
+        let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(ray);
+        bench.iter(|| black_box(aabb_1.intersects_2(&aabb_2, sign, origin_vec, inv_direction_vec, t_min, t_max)));
     }
 
     #[bench]

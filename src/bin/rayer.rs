@@ -513,7 +513,7 @@ fn main() {
                 image::Rgb(pixel)
             };
 
-            let mut fout = tempfile::NamedTempFile::new_in(output_dir).unwrap();
+            let mut fout = tempfile::Builder::new().tempfile_in(output_dir).unwrap();
 
             match format {
                 image::ImageFormat::HDR => {

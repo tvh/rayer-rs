@@ -43,7 +43,7 @@ impl<C: HasReflectance> Material for Lambertian<C> {
             vec3(-rec.normal.z, 0.0, rec.normal.x).normalize()
         };
         let w = rec.normal.cross(u);
-        let p = rand_in_unit_disk();
+        let p: Vector2D<f32> = rand_in_unit_disk();
         let z = f32::sqrt(1.0-p.square_length());
         let direction = u*p.x + w*p.y + rec.normal*z;
 

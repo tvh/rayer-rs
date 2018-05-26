@@ -4,7 +4,6 @@
 #![feature(slice_patterns)]
 #![feature(stdsimd)]
 #![feature(test)]
-#![feature(underscore_lifetimes)]
 #![plugin(quickcheck_macros)]
 extern crate arrayvec;
 extern crate core;

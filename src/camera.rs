@@ -25,8 +25,8 @@ impl Camera {
         let u = up.cross(w).normalize();
         let v = w.cross(u);
         let lower_left_corner = -u*half_width*focus_dist - v*half_height*focus_dist - w*focus_dist;
-        let horizontal = u*From::from(2.0)*half_width*focus_dist;
-        let vertical = v*From::from(2.0)*half_height*focus_dist;
+        let horizontal = u*2.0*half_width*focus_dist;
+        let vertical = v*2.0*half_height*focus_dist;
         Camera {
             lower_left_corner,
             horizontal,

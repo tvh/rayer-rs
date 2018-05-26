@@ -91,7 +91,7 @@ impl AABB {
                 self.bounds[sign.z as usize].z,
             );
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.max()
+            res_vec.max_element()
         };
 
         let tmax_0 = {
@@ -102,7 +102,7 @@ impl AABB {
                 self.bounds[1-sign.z as usize].z,
             );
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.min()
+            res_vec.min_element()
         };
 
         let tmin_1 = {
@@ -113,7 +113,7 @@ impl AABB {
                 second.bounds[sign.z as usize].z,
             );
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.max()
+            res_vec.max_element()
         };
 
         let tmax_1 = {
@@ -124,7 +124,7 @@ impl AABB {
                 second.bounds[1-sign.z as usize].z,
             );
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.min()
+            res_vec.min_element()
         };
 
         let res_0 = {

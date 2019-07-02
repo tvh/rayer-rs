@@ -43,7 +43,7 @@ mod tests {
     struct TestRgb(Rgb<E, f32>);
     impl Arbitrary for TestRgb {
         fn arbitrary<G: Gen>(g: &mut G) -> Self {
-            TestRgb(Rgb::with_wp(g.next_f32(), g.next_f32(), g.next_f32()))
+            TestRgb(Rgb::with_wp(f32::arbitrary(g), f32::arbitrary(g), f32::arbitrary(g)))
         }
     }
 
@@ -117,21 +117,22 @@ mod tests {
         }
     }
 
-    #[quickcheck]
-    fn reflected_intensity_seems_reasonable(rgb: TestRgb) -> () {
-        let TestRgb(rgb) = rgb;
-        let max_val = rgb.red.max(rgb.green).max(rgb.blue);
-        let min_val = rgb.red.min(rgb.green).min(rgb.blue);
-        for i in 380..780 {
-            let val = rgb.reflect(i as f32);
-            assert!(val>=min_val-0.001
-                    ,"Reflectance is lower than the lowest contributer: wl={:}nm, rbg={:?}, refl={:}"
-                    , i, rgb, val
-            );
-            assert!(val<=max_val+0.001
-                    ,"Reflectance is above the highest contributor: wl={:}nm, rbg={:?}, refl={:}"
-                    , i, rgb, val
-            );
+    quickcheck ! {
+        fn reflected_intensity_seems_reasonable(rgb: TestRgb) -> () {
+            let TestRgb(rgb) = rgb;
+            let max_val = rgb.red.max(rgb.green).max(rgb.blue);
+            let min_val = rgb.red.min(rgb.green).min(rgb.blue);
+            for i in 380..780 {
+                let val = rgb.reflect(i as f32);
+                assert!(val>=min_val-0.001
+                        ,"Reflectance is lower than the lowest contributer: wl={:}nm, rbg={:?}, refl={:}"
+                        , i, rgb, val
+                );
+                assert!(val<=max_val+0.001
+                        ,"Reflectance is above the highest contributor: wl={:}nm, rbg={:?}, refl={:}"
+                        , i, rgb, val
+                );
+            }
         }
     }
 

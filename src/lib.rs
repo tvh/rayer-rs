@@ -4,7 +4,6 @@
 #![feature(slice_patterns)]
 #![feature(stdsimd)]
 #![feature(test)]
-#![plugin(quickcheck_macros)]
 extern crate arrayvec;
 extern crate core;
 extern crate clap;
@@ -18,8 +17,13 @@ extern crate obj;
 extern crate palette;
 extern crate pbr;
 extern crate pdqselect;
+#[cfg(test)]
+#[macro_use]
 extern crate quickcheck;
+extern crate packed_simd;
 extern crate rand;
+extern crate rand_xorshift;
+extern crate rand_xoshiro;
 extern crate rayon;
 extern crate tempfile;
 extern crate test;

@@ -1,16 +1,19 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use rand::{Rand, Rng, XorShiftRng, weak_rng};
-use rand::distributions::range::SampleRange;
+use rand::{RngCore, Rng, SeedableRng};
+use rand_xorshift::XorShiftRng;
+use rand_xoshiro::Xoshiro256Plus;
+use rand::distributions::{Distribution, Standard};
+use rand::distributions::uniform::{SampleUniform};
 use euclid::*;
 use num_traits::Float;
 
 pub fn rand_in_unit_sphere<T>() -> Vector3D<T>
-where T: Float + Rand
+where T: Float, Standard: Distribution<T>
 {
     let mut rng = thread_rng();
     let mut p: Vector3D<T>;
-    let mut gen_component = || T::rand(&mut rng).mul_add(T::one()+T::one(), -T::one());
+    let mut gen_component = || rng.gen().mul_add(T::one()+T::one(), -T::one());
     while {
         p = vec3(gen_component(), gen_component(), gen_component());
         p.square_length() >= T::one()
@@ -19,11 +22,11 @@ where T: Float + Rand
 }
 
 pub fn rand_in_unit_disk<T>() -> Vector2D<T>
-where T: Float + Rand
+where T: Float, Standard: Distribution<T>
 {
     let mut rng = thread_rng();
     let mut p: Vector2D<T>;
-    let mut gen_component = || T::rand(&mut rng).mul_add(T::one()+T::one(), -T::one());
+    let mut gen_component = || rng.gen().mul_add(T::one()+T::one(), -T::one());
     while {
         p = vec2(gen_component(), gen_component());
         p.square_length() >= T::one()
@@ -37,8 +40,9 @@ pub fn next_f32() -> f32 {
 }
 
 #[inline]
-pub fn rand<T: Rand>() -> T {
-    T::rand(&mut thread_rng())
+pub fn rand<T>() -> T
+  where Standard: Distribution<T> {
+    thread_rng().gen()
 }
 
 #[inline]
@@ -51,18 +55,18 @@ pub fn rand<T: Rand>() -> T {
 /// assert!(gen_range(0, 5)>=0);
 /// assert!(gen_range(0, 5)<5);
 /// ```
-pub fn gen_range<T: PartialOrd + SampleRange>(low: T, high: T) -> T {
+pub fn gen_range<T: PartialOrd + SampleUniform>(low: T, high: T) -> T {
     thread_rng().gen_range(low, high)
 }
 
 #[derive(Clone, Debug)]
 pub struct XorShiftThreadRng {
-    rng: Rc<RefCell<XorShiftRng>>,
+    rng: Rc<RefCell<Xoshiro256Plus>>,
 }
 
 thread_local!(
-    static THREAD_RNG_KEY: Rc<RefCell<XorShiftRng>> = {
-        Rc::new(RefCell::new(weak_rng()))
+    static THREAD_RNG_KEY: Rc<RefCell<Xoshiro256Plus>> = {
+        Rc::new(RefCell::new(Xoshiro256Plus::from_entropy()))
     }
 );
 
@@ -70,7 +74,7 @@ fn thread_rng() -> XorShiftThreadRng {
     XorShiftThreadRng { rng: THREAD_RNG_KEY.with(|t| t.clone()) }
 }
 
-impl Rng for XorShiftThreadRng {
+impl RngCore for XorShiftThreadRng {
     #[inline]
     fn next_u32(&mut self) -> u32 {
         self.rng.borrow_mut().next_u32()
@@ -85,31 +89,37 @@ impl Rng for XorShiftThreadRng {
     fn fill_bytes(&mut self, bytes: &mut [u8]) {
         self.rng.borrow_mut().fill_bytes(bytes)
     }
+
+    #[inline]
+    fn try_fill_bytes(&mut self, bytes: &mut [u8]) -> Result<(), rand::Error> {
+        self.rng.borrow_mut().try_fill_bytes(bytes)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use test::*;
     use rand;
-    use rand::Rng;
+    use rand_xorshift;
+    use rand::{Rng, RngCore, SeedableRng};
     use euclid::*;
 
     #[bench]
     fn bench_thread_rng(bench: &mut Bencher) {
         let mut rng = rand::thread_rng();
-        bench.iter(|| black_box(rng.next_f32()));
+        bench.iter(|| black_box(rng.next_u32()));
     }
 
     #[bench]
     fn bench_xorshift_rng(bench: &mut Bencher) {
-        let mut rng = rand::XorShiftRng::new_unseeded();
-        bench.iter(|| black_box(rng.next_f32()));
+        let mut rng = rand_xorshift::XorShiftRng::seed_from_u64(2134);
+        bench.iter(|| black_box(rng.next_u32()));
     }
 
     #[bench]
     fn bench_xorshift_thread_rng(bench: &mut Bencher) {
         let mut rng = super::thread_rng();
-        bench.iter(|| black_box(rng.next_f32()));
+        bench.iter(|| black_box(rng.next_u32()));
     }
 
     #[bench]

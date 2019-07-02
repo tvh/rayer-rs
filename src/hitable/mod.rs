@@ -5,7 +5,7 @@ pub mod instance;
 
 use num_traits::Float;
 use euclid::*;
-use std::simd::*;
+use packed_simd::*;
 
 use ray::*;
 use texture::*;
@@ -216,25 +216,28 @@ mod tests {
     use super::*;
     use test::*;
     use num_traits::Float;
+    use rand::Rng;
     use quickcheck::{Arbitrary, Gen};
 
     impl Arbitrary for AABB {
         fn arbitrary<G: Gen>(g: &mut G) -> Self {
-            let l = point3(g.gen_range(-1.0, 1.0), g.gen_range(-1.0, 1.0), g.gen_range(-1.0, 1.0));
-            let h = point3(l.x+g.next_f32(), l.y+g.next_f32(), l.z+g.next_f32());
+            let gen_range = |g: &mut G| f32::arbitrary(g)*2.0 - 1.0;
+            let l = point3(gen_range(g), gen_range(g), gen_range(g));
+            let h = point3(l.x+f32::arbitrary(g), l.y+f32::arbitrary(g), l.z+f32::arbitrary(g));
             AABB { bounds: [l,h] }
         }
     }
 
-    #[quickcheck]
-    fn intersect_2_equivalence(aabb_1: AABB, aabb_2: AABB) {
-        let ray = Ray::new(point3(-1.0, -1.0, -1.0), vec3(1.0, 1.0, 1.0), 500.0, 0.0);
-        let t_min = 0.0001;
-        let t_max = f32::max_value();
-        let res_1 = aabb_1.intersects(ray, t_min, t_max);
-        let res_2 = aabb_2.intersects(ray, t_min, t_max);
-        let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(ray);
-        assert_eq!((res_1, res_2), aabb_1.intersects_2(&aabb_2, sign, origin_vec, inv_direction_vec, t_min, t_max));
+    quickcheck ! {
+        fn intersect_2_equivalence(aabb_1: AABB, aabb_2: AABB) -> () {
+            let ray = Ray::new(point3(-1.0, -1.0, -1.0), vec3(1.0, 1.0, 1.0), 500.0, 0.0);
+            let t_min = 0.0001;
+            let t_max = f32::max_value();
+            let res_1 = aabb_1.intersects(ray, t_min, t_max);
+            let res_2 = aabb_2.intersects(ray, t_min, t_max);
+            let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(ray);
+            assert_eq!((res_1, res_2), aabb_1.intersects_2(&aabb_2, sign, origin_vec, inv_direction_vec, t_min, t_max));
+        }
     }
 
     #[bench]

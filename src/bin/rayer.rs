@@ -479,6 +479,7 @@ fn main() {
         };
         let mut samples_done = 0;
         let output_path = Path::new(output_str.as_str());
+        let output_suffix = format!(".{}", output_path.extension().unwrap().to_str().unwrap());
         let output_dir = output_path.parent().unwrap();
         while let Ok(sample) = receiver.recv() {
             let mut samples_pending = vec![sample];
@@ -513,7 +514,10 @@ fn main() {
                 image::Rgb(pixel)
             };
 
-            let mut fout = tempfile::Builder::new().tempfile_in(output_dir).unwrap();
+            let mut fout =
+                tempfile::Builder::new()
+                .suffix(&output_suffix)
+                .tempfile_in(output_dir).unwrap();
 
             match format {
                 image::ImageFormat::HDR => {
@@ -526,7 +530,7 @@ fn main() {
                 },
                 _ => {
                     let buffer = image::ImageBuffer::from_fn(width, height, get_pixel_ldr);
-                    image::ImageRgb8(buffer).save(&mut fout, format).unwrap();
+                    image::ImageRgb8(buffer).save(&mut fout).unwrap();
                 }
             }
             fout.flush().unwrap();

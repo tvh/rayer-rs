@@ -80,7 +80,7 @@ fn reflectance<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool) -> f32 {
 }
 
 pub struct Scene {
-    objects: Vec<Arc<Hitable>>,
+    objects: Vec<Arc<dyn Hitable>>,
     look_from: Point3D<f32>,
     look_at: Point3D<f32>,
     focus_dist: f32,
@@ -91,8 +91,8 @@ pub struct Scene {
 
 fn just_earth() -> Scene {
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
-    let texture: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
-    let objects: Vec<Arc<Hitable>> = vec![
+    let texture: Arc<dyn Texture> = Arc::new(texture::ImageTexture::new(&image));
+    let objects: Vec<Arc<dyn Hitable>> = vec![
         Arc::new(Sphere::new(point3(0.0, 0.0, 0.0), 1.0, texture)),
     ];
 
@@ -111,7 +111,7 @@ fn three_spheres() -> Scene {
     let mat2 = Arc::new(Lambertian::new(Rgb::with_wp(0.8, 0.8, 0.0)));
     let mat3 = Arc::new(Metal::new(Rgb::with_wp(0.8, 0.6, 0.2), 1.0));
     let mat4 = Arc::new(Dielectric::SF66);
-    let objects: Vec<Arc<Hitable>> = vec![
+    let objects: Vec<Arc<dyn Hitable>> = vec![
         Arc::new(Sphere::new(Point3D::new(0.0, 0.0, -1.0), 0.5, mat1)),
         Arc::new(Sphere::new(Point3D::new(0.0, -100.5, -1.0), 100.0, mat2)),
         Arc::new(Sphere::new(Point3D::new(1.0, 0.0, -1.0), 0.5, mat3)),
@@ -133,10 +133,10 @@ fn three_spheres() -> Scene {
 fn many_spheres() -> Scene {
     let glass = Arc::new(Dielectric::SF66);
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
-    let ground: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
+    let ground: Arc<dyn Texture> = Arc::new(texture::ImageTexture::new(&image));
     let sphere0_mat = Arc::new(Lambertian::new(Rgb::with_wp(0.4, 0.2, 0.1)));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
-    let mut objects: Vec<Arc<Hitable>> = vec![
+    let mut objects: Vec<Arc<dyn Hitable>> = vec![
         Arc::new(Triangle::new(
             (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
             (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
@@ -199,9 +199,9 @@ fn simple_light() -> Scene {
     let ground = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
     let light = Arc::new(light::DiffuseLight::new(Rgb::with_wp(5.0, 5.0, 5.0)));
     let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
-    let sphere0_mat: Arc<Texture> = Arc::new(texture::ImageTexture::new(&image));
+    let sphere0_mat: Arc<dyn Texture> = Arc::new(texture::ImageTexture::new(&image));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
-    let objects: Vec<Arc<Hitable>> = vec![
+    let objects: Vec<Arc<dyn Hitable>> = vec![
         Arc::new(Triangle::new(
             (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
             (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
@@ -236,7 +236,7 @@ fn bunny() -> Scene {
     let ground = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
     let bunny0_mat = Arc::new(Dielectric::SF66);
     let bunny0 = Mesh::from_obj(Path::new("data/bunny.obj"), bunny0_mat).unwrap();
-    let objects: Vec<Arc<Hitable>> = vec![
+    let objects: Vec<Arc<dyn Hitable>> = vec![
         Arc::new(Triangle::new(
             (point3(-20.0, 0.0, -30.0), point3(-20.0, 0.0, 30.0), point3(20.0, 0.0, 30.0)),
             (vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0)),
@@ -310,10 +310,10 @@ fn cornell() -> Scene {
         right,
         green
     ));
-    let mut objects: Vec<Arc<Hitable>> =
+    let mut objects: Vec<Arc<dyn Hitable>> =
         triangles
         .iter()
-        .map(|t| Arc::new(t.clone()) as Arc<Hitable>)
+        .map(|t| Arc::new(t.clone()) as Arc<dyn Hitable>)
         .collect();
 
     let cube_mat = Arc::new(Dielectric::SF66);

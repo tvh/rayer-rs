@@ -18,8 +18,8 @@ pub trait Material: Debug + Send + Sync {
     fn scatter(&self, r_in: Ray, hit_record: HitRecord) -> ScatterResult;
 }
 
-impl<'a, 'b> PartialEq<Material+'b> for Material+'a {
-    fn eq(&self, other: &(Material+'b)) -> bool {
+impl<'a, 'b> PartialEq<dyn Material+'b> for dyn Material+'a {
+    fn eq(&self, other: &(dyn Material+'b)) -> bool {
         format!("{:?}", self) == format!("{:?}", other)
     }
 }

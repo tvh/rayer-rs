@@ -12,7 +12,7 @@ pub struct Sphere {
     t0: f32,
     t1: f32,
     radius: f32,
-    texture: Arc<Texture>,
+    texture: Arc<dyn Texture>,
 }
 
 // This should not be necessary.
@@ -28,7 +28,7 @@ impl PartialEq for Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Point3D<f32>, radius: f32, texture: Arc<Texture>) -> Sphere {
+    pub fn new(center: Point3D<f32>, radius: f32, texture: Arc<dyn Texture>) -> Sphere {
         Sphere{
             center0: center,
             center1: center,
@@ -39,7 +39,7 @@ impl Sphere {
         }
     }
 
-    pub fn new_moving(center0: Point3D<f32>, center1: Point3D<f32>, t0: f32, t1: f32, radius: f32, texture: Arc<Texture>) -> Sphere {
+    pub fn new_moving(center0: Point3D<f32>, center1: Point3D<f32>, t0: f32, t1: f32, radius: f32, texture: Arc<dyn Texture>) -> Sphere {
         Sphere{
             center0,
             center1,
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_hit() {
-        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+        let texture: Arc<dyn Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         let sphere = Sphere::new(point3(0.0, 0.0, 0.0), 1.0, texture.clone());
         let ray = Ray::new(point3(-2.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), 500.0, 0.0);
         let res = sphere.hit(ray, 0.0, 1000.0);

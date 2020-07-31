@@ -1,7 +1,5 @@
 #![feature(const_fn)]
 #![feature(fixed_size_array)]
-#![feature(plugin)]
-#![feature(slice_patterns)]
 #![feature(stdsimd)]
 #![feature(test)]
 extern crate arrayvec;

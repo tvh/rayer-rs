@@ -183,8 +183,8 @@ mod tests {
     use std::sync::Arc;
 
     fn bench_build(bench: &mut Bencher, n: u64) {
-        let mut hitables: Vec<Arc<Hitable>> = black_box(Vec::new());
-        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+        let mut hitables: Vec<Arc<dyn Hitable>> = black_box(Vec::new());
+        let texture: Arc<dyn Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();
@@ -205,7 +205,7 @@ mod tests {
 
     fn bench_intersect_bvh(bench: &mut Bencher, n: u64) {
         let mut hitables: Vec<Sphere> = black_box(Vec::new());
-        let texture: Arc<Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
+        let texture: Arc<dyn Texture> = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
         for _ in 0..n {
             let center = rand_in_unit_sphere().to_point();
             let tmp: f32 = rand();

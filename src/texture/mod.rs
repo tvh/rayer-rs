@@ -8,17 +8,17 @@ use palette::white_point::E;
 use material::*;
 
 pub trait Texture: Debug + Send + Sync {
-    fn value(&self, uv: Vector2D<f32>) -> Box<Material>;
+    fn value(&self, uv: Vector2D<f32>) -> Box<dyn Material>;
 }
 
-impl<'a, 'b> PartialEq<Texture+'b> for Texture+'a {
-    fn eq(&self, other: &(Texture+'b)) -> bool {
+impl<'a, 'b> PartialEq<dyn Texture+'b> for dyn Texture+'a {
+    fn eq(&self, other: &(dyn Texture+'b)) -> bool {
         format!("{:?}", self) == format!("{:?}", other)
     }
 }
 
 impl<M: Material+Clone+'static> Texture for M {
-    fn value(&self, _uv: Vector2D<f32>) -> Box<Material> {
+    fn value(&self, _uv: Vector2D<f32>) -> Box<dyn Material> {
         Box::new(self.clone())
     }
 }
@@ -35,7 +35,7 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, uv: Vector2D<f32>) -> Box<Material> {
+    fn value(&self, uv: Vector2D<f32>) -> Box<dyn Material> {
         let nx = self.image.width();
         let ny = self.image.height();
         let i: isize = (uv.x*(nx as f32)).to_isize().unwrap();

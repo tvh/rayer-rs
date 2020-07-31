@@ -16,7 +16,7 @@ pub struct HitRecord<'a> {
     pub p: Point3D<f32>,
     pub uv: Vector2D<f32>,
     pub normal: Vector3D<f32>,
-    pub texture: &'a Texture,
+    pub texture: &'a dyn Texture,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -199,7 +199,7 @@ pub trait Hitable: Send + Sync {
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
-impl<T: AsRef<Hitable> + Sync + Send> Hitable for T {
+impl<T: AsRef<dyn Hitable> + Sync + Send> Hitable for T {
     fn centroid(&self) -> Point3D<f32> {
          self.as_ref().centroid()
     }
@@ -216,7 +216,6 @@ mod tests {
     use super::*;
     use test::*;
     use num_traits::Float;
-    use rand::Rng;
     use quickcheck::{Arbitrary, Gen};
 
     impl Arbitrary for AABB {

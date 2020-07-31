@@ -13,7 +13,7 @@ pub struct Triangle {
     vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
     normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
     uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
-    texture: Arc<Texture>,
+    texture: Arc<dyn Texture>,
 }
 
 impl Triangle {
@@ -21,7 +21,7 @@ impl Triangle {
         vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
         normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
         uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
-        texture: Arc<Texture>,
+        texture: Arc<dyn Texture>,
     ) -> Triangle {
         Triangle {
             vert,
@@ -34,12 +34,12 @@ impl Triangle {
 
 pub fn polygon(
     data: &[(Point3D<f32>, Vector3D<f32>, Vector2D<f32>)],
-    texture: Arc<Texture>,
+    texture: Arc<dyn Texture>,
 ) -> Vec<Triangle> {
     let mut res = Vec::with_capacity(data.len()-2);
     match data {
         &[] => return res,
-        &[(p0, n0, t0), ref rest..] => {
+        &[(p0, n0, t0), ref rest @ ..] => {
             for (&(p1, n1, t1), &(p2, n2, t2)) in rest.iter().zip(rest[1..].iter()) {
                 res.push(Triangle::new(
                     (p0, p1, p2),
@@ -119,7 +119,7 @@ impl Hitable for Triangle {
 pub fn uniform_polygon(
     data: &[Point3D<f32>],
     normal: Vector3D<f32>,
-    material: Arc<Texture>,
+    material: Arc<dyn Texture>,
 ) -> Vec<Triangle> {
     let mut args = Vec::with_capacity(data.len());
     for &p in data.iter() {
@@ -160,7 +160,7 @@ impl Mesh {
     /// ```
     pub fn from_obj(
         path: &Path,
-        texture: Arc<Texture>
+        texture: Arc<dyn Texture>
     ) -> Result<Mesh, Error> {
         let obj: Obj<'_, SimplePolygon> = Obj::load(path)?;
         let mut triangles: Vec<Triangle> = Vec::new();
@@ -216,7 +216,7 @@ impl Hitable for Mesh {
 pub fn axis_aligned_cuboid(
     l: Point3D<f32>,
     h: Point3D<f32>,
-    texture: Arc<Texture>
+    texture: Arc<dyn Texture>
 ) -> Mesh {
     let mut triangles = Vec::with_capacity(12);
     triangles.extend_from_slice(uniform_polygon(

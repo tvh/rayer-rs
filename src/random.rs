@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use rand::{RngCore, Rng, SeedableRng};
-use rand_xorshift::XorShiftRng;
 use rand_xoshiro::Xoshiro256Plus;
 use rand::distributions::{Distribution, Standard};
 use rand::distributions::uniform::{SampleUniform};

@@ -42,7 +42,7 @@ impl Texture for ImageTexture {
         let j: isize = ((1.0 - uv.y)*(ny as f32)-0.001).to_isize().unwrap();
         let i: u32 = i.max(0).min(nx as isize).to_u32().unwrap();
         let j: u32 = j.max(0).min(ny as isize).to_u32().unwrap();
-        let Rgb{ data: [r,g,b] } = self.image[(i, j)];
+        let Rgb([r,g,b]) = self.image[(i, j)];
         let rgbf: palette::Rgb<E, f32> = palette::pixel::Srgb::with_wp(
             r as f32/255.0,
             g as f32/255.0,

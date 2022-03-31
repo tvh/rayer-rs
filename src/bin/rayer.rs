@@ -15,7 +15,7 @@ extern crate tempfile;
 use clap::{Arg, Command};
 use crossbeam_channel::{unbounded, Sender};
 use euclid::*;
-use image::hdr::*;
+use image::codecs::hdr::*;
 use num_traits::Float;
 use palette::*;
 use palette::pixel::Srgb;
@@ -90,7 +90,7 @@ pub struct Scene {
 }
 
 fn just_earth() -> Scene {
-    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
+    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb8());
     let texture: Arc<dyn Texture> = Arc::new(texture::ImageTexture::new(&image));
     let objects: Vec<Arc<dyn Hitable>> = vec![
         Arc::new(Sphere::new(point3(0.0, 0.0, 0.0), 1.0, texture)),
@@ -132,7 +132,7 @@ fn three_spheres() -> Scene {
 
 fn many_spheres() -> Scene {
     let glass = Arc::new(Dielectric::SF66);
-    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
+    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb8());
     let ground: Arc<dyn Texture> = Arc::new(texture::ImageTexture::new(&image));
     let sphere0_mat = Arc::new(Lambertian::new(Rgb::with_wp(0.4, 0.2, 0.1)));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
@@ -198,7 +198,7 @@ fn simple_light() -> Scene {
     let glass = Arc::new(Dielectric::SF66);
     let ground = Arc::new(Lambertian::new(Rgb::with_wp(0.5, 0.5, 0.5)));
     let light = Arc::new(light::DiffuseLight::new(Rgb::with_wp(5.0, 5.0, 5.0)));
-    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb());
+    let image = Arc::new(image::open("data/earth.jpg").unwrap().to_rgb8());
     let sphere0_mat: Arc<dyn Texture> = Arc::new(texture::ImageTexture::new(&image));
     let sphere1_mat = Arc::new(Metal::new(Rgb::with_wp(0.7, 0.6, 0.5), 0.0));
     let objects: Vec<Arc<dyn Hitable>> = vec![
@@ -422,10 +422,10 @@ fn main() {
     let output = Path::new(matches.value_of("output").unwrap());
     let format = match output.extension().map(|ext| ext.to_str().unwrap()) {
         None => panic!("Cannot know format without extension"),
-        Some("png") => image::PNG,
-        Some("jpg") => image::JPEG,
-        Some("jpeg") => image::JPEG,
-        Some("hdr") => image::ImageFormat::HDR,
+        Some("png") => image::ImageFormat::Png,
+        Some("jpg") => image::ImageFormat::Jpeg,
+        Some("jpeg") => image::ImageFormat::Jpeg,
+        Some("hdr") => image::ImageFormat::Hdr,
         Some(ext) => panic!("Unknown extension: {:?}", ext),
     };
     let output_str = String::from(output.to_str().unwrap());
@@ -520,17 +520,17 @@ fn main() {
                 .tempfile_in(output_dir).unwrap();
 
             match format {
-                image::ImageFormat::HDR => {
+                image::ImageFormat::Hdr => {
                     let buffer: Vec<_> =
                         (0..(width*height))
                         .map(|n| get_pixel_hdr(n%width, n/width))
                         .collect();
-                    let encoder = HDREncoder::new(&fout);
+                    let encoder = HdrEncoder::new(&fout);
                     encoder.encode(buffer.as_slice(), width as usize, height as usize).unwrap();
                 },
                 _ => {
                     let buffer = image::ImageBuffer::from_fn(width, height, get_pixel_ldr);
-                    image::ImageRgb8(buffer).save(&mut fout).unwrap();
+                    image::DynamicImage::ImageRgb8(buffer).save_with_format(&mut fout, format).unwrap();
                 }
             }
             fout.flush().unwrap();

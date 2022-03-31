@@ -123,7 +123,7 @@ impl<H: Hitable> Hitable for BVH<H> {
         let mut closest_so_far = t_max;
 
         // The nodes are arranged in a binary tree. This should be more than enough.
-        let mut stack: ArrayVec<[_;64]> = ArrayVec::new();
+        let mut stack: ArrayVec<_, 64> = ArrayVec::new();
         stack.push(0);
 
         let (origin_vec, inv_direction_vec, sign) = AABB::prepare_intersect(r);

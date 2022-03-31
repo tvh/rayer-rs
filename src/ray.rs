@@ -4,17 +4,17 @@ pub struct Inverted;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Ray {
-    pub origin: Point3D<f32>,
-    pub direction: Vector3D<f32>,
+    pub origin: Point3D<f32, UnknownUnit>,
+    pub direction: Vector3D<f32, UnknownUnit>,
     pub wl: f32,
-    pub inv_direction: TypedVector3D<f32, Inverted>,
-    pub sign: TypedVector3D<bool, Inverted>,
+    pub inv_direction: Vector3D<f32, Inverted>,
+    pub sign: Vector3D<bool, Inverted>,
     pub ti: f32,
 }
 
 impl Ray
 {
-    pub fn new(origin: Point3D<f32>, direction: Vector3D<f32>, wl: f32, ti: f32) -> Ray {
+    pub fn new(origin: Point3D<f32, UnknownUnit>, direction: Vector3D<f32, UnknownUnit>, wl: f32, ti: f32) -> Ray {
         let inv_direction =
             vec3(direction.x.recip(), direction.y.recip(), direction.z.recip());
         let sign =
@@ -22,7 +22,7 @@ impl Ray
         Ray{origin, direction, wl, inv_direction, sign, ti}
     }
 
-    pub fn point_at_parameter(self, t: f32) -> Point3D<f32> {
+    pub fn point_at_parameter(self, t: f32) -> Point3D<f32, UnknownUnit> {
         self.origin + self.direction*t
     }
 }

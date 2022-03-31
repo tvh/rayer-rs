@@ -43,7 +43,7 @@ impl<C: HasReflectance> Material for Lambertian<C> {
             vec3(-rec.normal.z, 0.0, rec.normal.x).normalize()
         };
         let w = rec.normal.cross(u);
-        let p: Vector2D<f32> = rand_in_unit_disk();
+        let p: Vector2D<f32, UnknownUnit> = rand_in_unit_disk();
         let z = f32::sqrt(1.0-p.square_length());
         let direction = u*p.x + w*p.y + rec.normal*z;
 
@@ -82,7 +82,7 @@ impl<R: HasReflectance> Material for Metal<R> {
     }
 }
 
-fn reflect(v: Vector3D<f32>, n: Vector3D<f32>) -> Vector3D<f32> {
+fn reflect(v: Vector3D<f32, UnknownUnit>, n: Vector3D<f32, UnknownUnit>) -> Vector3D<f32, UnknownUnit> {
     v - n*v.dot(n)*2.0
 }
 
@@ -131,7 +131,7 @@ impl Dielectric {
         };
 }
 
-fn refract(v: Vector3D<f32>, n: Vector3D<f32>, ni_over_nt: f32) -> Option<Vector3D<f32>> {
+fn refract(v: Vector3D<f32, UnknownUnit>, n: Vector3D<f32, UnknownUnit>, ni_over_nt: f32) -> Option<Vector3D<f32, UnknownUnit>> {
     let uv = v.normalize();
     let dt = uv.dot(n);
     let discriminant = 1.0 - ni_over_nt*ni_over_nt*(1.0-dt*dt);

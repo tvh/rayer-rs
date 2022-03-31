@@ -6,7 +6,7 @@ use num_traits::FloatConst;
 #[derive(Debug, Clone)]
 struct Translate<H: Hitable> {
     pub object: H,
-    pub offset: Vector3D<f32>,
+    pub offset: Vector3D<f32, UnknownUnit>,
 }
 
 /// Translate a given object
@@ -34,7 +34,7 @@ struct Translate<H: Hitable> {
 /// ```
 pub fn translate<H: Hitable>(
     object: H,
-    offset: Vector3D<f32>,
+    offset: Vector3D<f32, UnknownUnit>,
 ) -> impl Hitable {
     Translate {
         offset,
@@ -141,12 +141,12 @@ pub fn rotate_y<H: Hitable>(object: H, angle: f32) -> impl Hitable {
 #[derive(Debug, Clone)]
 pub struct Scale<H: Hitable> {
     object: H,
-    scale: Vector3D<f32>,
-    inv_scale: Vector3D<f32>,
+    scale: Vector3D<f32, UnknownUnit>,
+    inv_scale: Vector3D<f32, UnknownUnit>,
     bbox: AABB,
 }
 
-pub fn scale<H: Hitable>(object: H, scale: Vector3D<f32>) -> impl Hitable {
+pub fn scale<H: Hitable>(object: H, scale: Vector3D<f32, UnknownUnit>) -> impl Hitable {
     let bbox = object.bbox();
     let scaled_l =
         point3(

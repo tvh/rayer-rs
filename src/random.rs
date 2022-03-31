@@ -7,11 +7,11 @@ use rand::distributions::uniform::{SampleUniform};
 use euclid::*;
 use num_traits::Float;
 
-pub fn rand_in_unit_sphere<T>() -> Vector3D<T>
+pub fn rand_in_unit_sphere<T>() -> Vector3D<T, UnknownUnit>
 where T: Float, Standard: Distribution<T>
 {
     let mut rng = thread_rng();
-    let mut p: Vector3D<T>;
+    let mut p: Vector3D<T, UnknownUnit>;
     let mut gen_component = || rng.gen().mul_add(T::one()+T::one(), -T::one());
     while {
         p = vec3(gen_component(), gen_component(), gen_component());
@@ -20,11 +20,11 @@ where T: Float, Standard: Distribution<T>
     p
 }
 
-pub fn rand_in_unit_disk<T>() -> Vector2D<T>
+pub fn rand_in_unit_disk<T>() -> Vector2D<T, UnknownUnit>
 where T: Float, Standard: Distribution<T>
 {
     let mut rng = thread_rng();
-    let mut p: Vector2D<T>;
+    let mut p: Vector2D<T, UnknownUnit>;
     let mut gen_component = || rng.gen().mul_add(T::one()+T::one(), -T::one());
     while {
         p = vec2(gen_component(), gen_component());
@@ -131,16 +131,16 @@ mod tests {
 
     #[bench]
     fn bench_rand_in_unit_sphere_f32(bench: &mut Bencher) {
-        bench.iter(|| black_box(super::rand_in_unit_sphere() as Vector3D<f32>));
+        bench.iter(|| black_box(super::rand_in_unit_sphere() as Vector3D<f32, UnknownUnit>));
     }
 
     #[bench]
     fn bench_rand_in_unit_sphere_f64(bench: &mut Bencher) {
-        bench.iter(|| black_box(super::rand_in_unit_sphere() as Vector3D<f64>));
+        bench.iter(|| black_box(super::rand_in_unit_sphere() as Vector3D<f64, UnknownUnit>));
     }
 
     #[bench]
     fn bench_rand_in_unit_disk(bench: &mut Bencher) {
-        bench.iter(|| black_box(super::rand_in_unit_disk() as Vector2D<f32>));
+        bench.iter(|| black_box(super::rand_in_unit_disk() as Vector2D<f32, UnknownUnit>));
     }
 }

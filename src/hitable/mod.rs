@@ -13,15 +13,15 @@ use texture::*;
 #[derive(PartialEq, Debug)]
 pub struct HitRecord<'a> {
     pub t: f32,
-    pub p: Point3D<f32>,
-    pub uv: Vector2D<f32>,
-    pub normal: Vector3D<f32>,
+    pub p: Point3D<f32, UnknownUnit>,
+    pub uv: Vector2D<f32, UnknownUnit>,
+    pub normal: Vector3D<f32, UnknownUnit>,
     pub texture: &'a dyn Texture,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct AABB {
-    pub bounds: [Point3D<f32>;2]
+    pub bounds: [Point3D<f32, UnknownUnit>;2]
 }
 
 impl AABB {
@@ -61,7 +61,7 @@ impl AABB {
         }
     }
 
-    pub fn prepare_intersect(r: Ray) -> (f32x4, f32x4, TypedVector3D<bool, Inverted>) {
+    pub fn prepare_intersect(r: Ray) -> (f32x4, f32x4, Vector3D<bool, Inverted>) {
         let origin_vec = f32x4::from([
             r.origin.x,
             r.origin.y,
@@ -82,7 +82,7 @@ impl AABB {
     const WIGGLE_FACTOR: f32 = 0.0001;
 
     #[inline(always)]
-    pub fn intersects_2(&self, second: &Self, sign: TypedVector3D<bool, Inverted>, origin_vec: f32x4, inv_direction_vec: f32x4, t0: f32, t1: f32) -> (Option<f32>, Option<f32>) {
+    pub fn intersects_2(&self, second: &Self, sign: Vector3D<bool, Inverted>, origin_vec: f32x4, inv_direction_vec: f32x4, t0: f32, t1: f32) -> (Option<f32>, Option<f32>) {
         let tmin_0 = {
             let bounds_vec = f32x4::from([
                 self.bounds[sign.x as usize].x,
@@ -183,7 +183,7 @@ impl AABB {
 }
 
 pub trait Hitable: Send + Sync {
-    fn centroid(&self) -> Point3D<f32> {
+    fn centroid(&self) -> Point3D<f32, UnknownUnit> {
         let bbox = self.bbox();
         match bbox {
             AABB{ bounds: [low, high] } => {
@@ -200,7 +200,7 @@ pub trait Hitable: Send + Sync {
 }
 
 impl<T: AsRef<dyn Hitable> + Sync + Send> Hitable for T {
-    fn centroid(&self) -> Point3D<f32> {
+    fn centroid(&self) -> Point3D<f32, UnknownUnit> {
          self.as_ref().centroid()
     }
     fn bbox(&self) -> AABB {

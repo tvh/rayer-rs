@@ -28,7 +28,7 @@ impl<H: Hitable> BVH<H> {
         enum Axis {
             X, Y, Z
         }
-        fn go(items: &mut [(Point3D<f32>, usize, AABB)], res: &mut Vec<Node>) -> (AABB, usize) {
+        fn go(items: &mut [(Point3D<f32, UnknownUnit>, usize, AABB)], res: &mut Vec<Node>) -> (AABB, usize) {
             match items {
                 &mut [] => { return (AABB::empty(), 0); },
                 &mut [ref item] => {
@@ -96,7 +96,7 @@ impl<H: Hitable> BVH<H> {
             };
             (bbox, 1+left_length+right_length)
         }
-        let mut item_stats: Vec<(Point3D<f32>, usize, AABB)> = items.iter().enumerate().map(|(i, x)| (x.centroid(), i, x.bbox())).collect();
+        let mut item_stats: Vec<(Point3D<f32, UnknownUnit>, usize, AABB)> = items.iter().enumerate().map(|(i, x)| (x.centroid(), i, x.bbox())).collect();
         let mut nodes: Vec<Node> = Vec::with_capacity(items.len()*2-1);
         go(item_stats.as_mut_slice(), &mut nodes);
         BVH { nodes, items }

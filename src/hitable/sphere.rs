@@ -7,8 +7,8 @@ use texture::Texture;
 
 #[derive(Debug, Clone)]
 pub struct Sphere {
-    center0: Point3D<f32>,
-    center1: Point3D<f32>,
+    center0: Point3D<f32, UnknownUnit>,
+    center1: Point3D<f32, UnknownUnit>,
     t0: f32,
     t1: f32,
     radius: f32,
@@ -28,7 +28,7 @@ impl PartialEq for Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: Point3D<f32>, radius: f32, texture: Arc<dyn Texture>) -> Sphere {
+    pub fn new(center: Point3D<f32, UnknownUnit>, radius: f32, texture: Arc<dyn Texture>) -> Sphere {
         Sphere{
             center0: center,
             center1: center,
@@ -39,7 +39,7 @@ impl Sphere {
         }
     }
 
-    pub fn new_moving(center0: Point3D<f32>, center1: Point3D<f32>, t0: f32, t1: f32, radius: f32, texture: Arc<dyn Texture>) -> Sphere {
+    pub fn new_moving(center0: Point3D<f32, UnknownUnit>, center1: Point3D<f32, UnknownUnit>, t0: f32, t1: f32, radius: f32, texture: Arc<dyn Texture>) -> Sphere {
         Sphere{
             center0,
             center1,
@@ -52,7 +52,7 @@ impl Sphere {
 }
 
 impl Hitable for Sphere {
-    fn centroid(&self) -> Point3D<f32> {
+    fn centroid(&self) -> Point3D<f32, UnknownUnit> {
         (self.center0+self.center1.to_vector())*0.5
     }
     fn bbox(&self) -> AABB {

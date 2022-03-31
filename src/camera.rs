@@ -3,19 +3,19 @@ use euclid::*;
 use random::*;
 
 pub struct Camera {
-    origin: Point3D<f32>,
-    lower_left_corner: Vector3D<f32>,
-    horizontal: Vector3D<f32>,
-    vertical: Vector3D<f32>,
-    u: Vector3D<f32>,
-    v: Vector3D<f32>,
+    origin: Point3D<f32, UnknownUnit>,
+    lower_left_corner: Vector3D<f32, UnknownUnit>,
+    horizontal: Vector3D<f32, UnknownUnit>,
+    vertical: Vector3D<f32, UnknownUnit>,
+    u: Vector3D<f32, UnknownUnit>,
+    v: Vector3D<f32, UnknownUnit>,
     lens_radius: f32,
     t0: f32,
     t1: f32,
 }
 
 impl Camera {
-    pub fn new(look_from: Point3D<f32>, look_at: Point3D<f32>, up: Vector3D<f32>, vfov: f32, aspect: f32, aperture: f32, focus_dist: f32, t0: f32, t1: f32) -> Self {
+    pub fn new(look_from: Point3D<f32, UnknownUnit>, look_at: Point3D<f32, UnknownUnit>, up: Vector3D<f32, UnknownUnit>, vfov: f32, aspect: f32, aperture: f32, focus_dist: f32, t0: f32, t1: f32) -> Self {
         let lens_radius = aperture*0.5;
         let theta = vfov.to_radians();
         let half_height = f32::tan(theta*0.5);

@@ -81,8 +81,8 @@ fn reflectance<H: Hitable>(r: ray::Ray, world: &H, render_sky: bool) -> f32 {
 
 pub struct Scene {
     objects: Vec<Arc<dyn Hitable>>,
-    look_from: Point3D<f32>,
-    look_at: Point3D<f32>,
+    look_from: Point3D<f32, UnknownUnit>,
+    look_at: Point3D<f32, UnknownUnit>,
     focus_dist: f32,
     aperture: f32,
     vfov: f32,

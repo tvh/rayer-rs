@@ -10,17 +10,17 @@ use texture::Texture;
 
 #[derive(Debug, Clone)]
 pub struct Triangle {
-    vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
-    normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
-    uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
+    vert: (Point3D<f32, UnknownUnit>, Point3D<f32, UnknownUnit>, Point3D<f32, UnknownUnit>),
+    normal: (Vector3D<f32, UnknownUnit>, Vector3D<f32, UnknownUnit>, Vector3D<f32, UnknownUnit>),
+    uv: (Vector2D<f32, UnknownUnit>, Vector2D<f32, UnknownUnit>, Vector2D<f32, UnknownUnit>),
     texture: Arc<dyn Texture>,
 }
 
 impl Triangle {
     pub fn new(
-        vert: (Point3D<f32>, Point3D<f32>, Point3D<f32>),
-        normal: (Vector3D<f32>, Vector3D<f32>, Vector3D<f32>),
-        uv: (Vector2D<f32>, Vector2D<f32>, Vector2D<f32>),
+        vert: (Point3D<f32, UnknownUnit>, Point3D<f32, UnknownUnit>, Point3D<f32, UnknownUnit>),
+        normal: (Vector3D<f32, UnknownUnit>, Vector3D<f32, UnknownUnit>, Vector3D<f32, UnknownUnit>),
+        uv: (Vector2D<f32, UnknownUnit>, Vector2D<f32, UnknownUnit>, Vector2D<f32, UnknownUnit>),
         texture: Arc<dyn Texture>,
     ) -> Triangle {
         Triangle {
@@ -33,7 +33,7 @@ impl Triangle {
 }
 
 pub fn polygon(
-    data: &[(Point3D<f32>, Vector3D<f32>, Vector2D<f32>)],
+    data: &[(Point3D<f32, UnknownUnit>, Vector3D<f32, UnknownUnit>, Vector2D<f32, UnknownUnit>)],
     texture: Arc<dyn Texture>,
 ) -> Vec<Triangle> {
     let mut res = Vec::with_capacity(data.len()-2);
@@ -117,8 +117,8 @@ impl Hitable for Triangle {
 /// All points should be on the same plane.
 /// The texture coordinates will always be mapped to (0,0)
 pub fn uniform_polygon(
-    data: &[Point3D<f32>],
-    normal: Vector3D<f32>,
+    data: &[Point3D<f32, UnknownUnit>],
+    normal: Vector3D<f32, UnknownUnit>,
     material: Arc<dyn Texture>,
 ) -> Vec<Triangle> {
     let mut args = Vec::with_capacity(data.len());
@@ -175,8 +175,8 @@ impl Mesh {
                         let vert1 = obj.position[p1.0].into();
                         let vert2 = obj.position[p2.0].into();
 
-                        let v: Vector3D<f32> = vert1-vert0;
-                        let w: Vector3D<f32> = vert2-vert0;
+                        let v: Vector3D<f32, UnknownUnit> = vert1-vert0;
+                        let w: Vector3D<f32, UnknownUnit> = vert2-vert0;
                         let default_normal = v.cross(w);
 
                         let normal0 = p0.2.map_or(default_normal, &get_normal);
@@ -214,8 +214,8 @@ impl Hitable for Mesh {
 /// Build an axis aligned cuboid.
 /// For now all texture coordinated will be mapped to (0, 0)
 pub fn axis_aligned_cuboid(
-    l: Point3D<f32>,
-    h: Point3D<f32>,
+    l: Point3D<f32, UnknownUnit>,
+    h: Point3D<f32, UnknownUnit>,
     texture: Arc<dyn Texture>
 ) -> Mesh {
     let mut triangles = Vec::with_capacity(12);

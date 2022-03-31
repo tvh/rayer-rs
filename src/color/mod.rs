@@ -42,7 +42,7 @@ mod tests {
     #[derive(Clone, Debug)]
     struct TestRgb(Rgb<E, f32>);
     impl Arbitrary for TestRgb {
-        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        fn arbitrary(g: &mut Gen) -> Self {
             TestRgb(Rgb::with_wp(f32::arbitrary(g), f32::arbitrary(g), f32::arbitrary(g)))
         }
     }
@@ -82,7 +82,7 @@ mod tests {
         if max_z>white.z {
             errors.push_str(&format!("Invalid z for wl={:}nm, z={:}\n", max_z_freq, max_z));
         }
-        assert!(errors.len()==0, errors);
+        assert!(errors.len()==0, "{}", errors);
     }
 
     #[test]

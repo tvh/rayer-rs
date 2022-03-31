@@ -219,8 +219,8 @@ mod tests {
     use quickcheck::{Arbitrary, Gen};
 
     impl Arbitrary for AABB {
-        fn arbitrary<G: Gen>(g: &mut G) -> Self {
-            let gen_range = |g: &mut G| f32::arbitrary(g)*2.0 - 1.0;
+        fn arbitrary(g: &mut Gen) -> Self {
+            let gen_range = |g: &mut Gen| f32::arbitrary(g)*2.0 - 1.0;
             let l = point3(gen_range(g), gen_range(g), gen_range(g));
             let h = point3(l.x+f32::arbitrary(g), l.y+f32::arbitrary(g), l.z+f32::arbitrary(g));
             AABB { bounds: [l,h] }

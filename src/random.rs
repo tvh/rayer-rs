@@ -55,7 +55,7 @@ pub fn rand<T>() -> T
 /// assert!(gen_range(0, 5)<5);
 /// ```
 pub fn gen_range<T: PartialOrd + SampleUniform>(low: T, high: T) -> T {
-    thread_rng().gen_range(low, high)
+    thread_rng().gen_range(low..high)
 }
 
 #[derive(Clone, Debug)]
@@ -126,7 +126,7 @@ mod tests {
         let mut rng = super::thread_rng();
         let low = black_box(-1.0);
         let high = black_box(1.0);
-        bench.iter(|| black_box(rng.gen_range(low, high)));
+        bench.iter(|| black_box(rng.gen_range(low..high)));
     }
 
     #[bench]

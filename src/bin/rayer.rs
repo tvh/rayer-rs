@@ -12,7 +12,7 @@ extern crate pbr;
 extern crate rayon;
 extern crate tempfile;
 
-use clap::{Arg, App};
+use clap::{Arg, Command};
 use crossbeam_channel::{unbounded, Sender};
 use euclid::*;
 use image::hdr::*;
@@ -380,32 +380,32 @@ lazy_static! {
 
 fn main() {
     let matches =
-        App::new("Rayer")
+        Command::new("Rayer")
         .version("1.0")
-        .arg(Arg::with_name("output")
+        .arg(Arg::new("output")
              .long("output")
              .value_name("FILE")
              .required(true)
              .takes_value(true))
-        .arg(Arg::with_name("cpuprofile")
+        .arg(Arg::new("cpuprofile")
              .long("cpuprofile")
              .value_name("FILE")
              .takes_value(true))
-        .arg(Arg::with_name("scene")
+        .arg(Arg::new("scene")
              .long("scene")
              .value_name("SCENE_NAME")
              .default_value("many_spheres")
              .takes_value(true))
-        .arg(Arg::with_name("samples")
+        .arg(Arg::new("samples")
              .long("samples")
              .value_name("NUMBER")
              .default_value("100")
              .takes_value(true))
-        .arg(Arg::with_name("width")
+        .arg(Arg::new("width")
              .long("width")
              .value_name("NUMBER")
              .takes_value(true))
-        .arg(Arg::with_name("height")
+        .arg(Arg::new("height")
              .long("height")
              .value_name("NUMBER")
              .takes_value(true))

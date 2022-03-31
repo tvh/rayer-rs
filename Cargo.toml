@@ -9,7 +9,7 @@ debug = true
 [dependencies]
 arrayvec = "0.4.10"
 clap = "2.33.0"
-cpuprofiler = "0.0.3"
+cpuprofiler = "0.0.4"
 crossbeam-channel = "0.3.8"
 decorum = "0.1.3"
 euclid = "0.19.9"
@@ -26,5 +26,5 @@ rand = "0.7.0"
 rand_xorshift = "0.2.0"
 rand_xoshiro = "0.3.0"
 rayon = "1.1.0"
-packed_simd = "0.3.3"
+packed_simd = { version = "0.3.6", package = "packed_simd_2" }
 tempfile = "3.1.0"

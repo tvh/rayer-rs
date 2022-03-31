@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 use std::ops::*;
 use std::fmt::Debug;
-use core::array::FixedSizeArray;
 use std::fmt;
 use palette::*;
 use palette::white_point::E;
@@ -10,7 +9,7 @@ use color::cie_1931::xyz_from_wavelength;
 use color::HasReflectance;
 
 pub trait BinData: Send + Sync {
-    type Spectrum: Clone + Copy + FixedSizeArray<f32> + Send + Sync;
+    type Spectrum: Clone + Copy + AsRef<[f32]> + AsMut<[f32]> + Send + Sync;
     const WL_0: f32;
     const BIN_WIDTH: f32;
 }
@@ -36,7 +35,7 @@ pub struct BinnedSpectrum<T: BinData> {
 impl<T: BinData> PartialEq for BinnedSpectrum<T> {
     fn eq(&self, right: &Self) -> bool {
         let mut res = true;
-        for (&x,&y) in self.spectrum.as_slice().iter().zip(right.spectrum.as_slice().iter()) {
+        for (&x,&y) in self.spectrum.as_ref().iter().zip(right.spectrum.as_ref().iter()) {
             res &= x==y;
         }
         return res;
@@ -48,7 +47,7 @@ impl<T: BinData> Debug for BinnedSpectrum<T> {
         fmt.debug_struct("BinnedSpectrum")
             .field("wl_0", &T::WL_0)
             .field("bin_width", &T::BIN_WIDTH)
-            .field("spectrum", &self.spectrum.as_slice())
+            .field("spectrum", &self.spectrum.as_ref())
             .finish()
     }
 }
@@ -74,7 +73,7 @@ impl<T: BinData> Add for BinnedSpectrum<T> {
     type Output = BinnedSpectrum<T>;
     fn add(self, other: BinnedSpectrum<T>) -> BinnedSpectrum<T> {
         let mut res = self.spectrum.clone();
-        for (a, b) in other.spectrum.as_slice().iter().zip(res.as_mut_slice().iter_mut()) {
+        for (a, b) in other.spectrum.as_ref().iter().zip(res.as_mut().iter_mut()) {
             *b = *a+*b;
         }
         BinnedSpectrum::new(res)
@@ -83,7 +82,7 @@ impl<T: BinData> Add for BinnedSpectrum<T> {
 
 impl<T: BinData> AddAssign for BinnedSpectrum<T> {
     fn add_assign(&mut self, other: BinnedSpectrum<T>) {
-        for (a, b) in other.spectrum.as_slice().iter().zip(self.spectrum.as_mut_slice().iter_mut()) {
+        for (a, b) in other.spectrum.as_ref().iter().zip(self.spectrum.as_mut().iter_mut()) {
             *b = *a+*b;
         }
     }
@@ -93,7 +92,7 @@ impl<T: BinData> Mul<BinnedSpectrum<T>> for f32 {
     type Output = BinnedSpectrum<T>;
     fn mul(self, other: BinnedSpectrum<T>) -> BinnedSpectrum<T> {
         let mut res = other.spectrum.clone();
-        for x in res.as_mut_slice().iter_mut() {
+        for x in res.as_mut().iter_mut() {
             *x *= self;
         }
         BinnedSpectrum::new(res)
@@ -106,21 +105,21 @@ impl<T: BinData> HasReflectance for BinnedSpectrum<T> {
         if index < 0 {
             index = 0;
         }
-        let len = self.spectrum.as_slice().len() as isize;
+        let len = self.spectrum.as_ref().len() as isize;
         if index >= len {
             index = len-1;
         }
-        self.spectrum.as_slice()[index as usize]
+        self.spectrum.as_ref()[index as usize]
     }
 
     fn reflect_xyz(&self) -> Xyz<E, f32> {
         let mut res = Xyz::with_wp(0.0, 0.0, 0.0);
         let mut wl = T::WL_0;
-        for &v in self.spectrum.as_slice().iter() {
+        for &v in self.spectrum.as_ref().iter() {
             res = res+(xyz_from_wavelength(wl)*v);
             wl += T::BIN_WIDTH;
         }
-        res = res*3.0/(self.spectrum.as_slice().len() as f32);
+        res = res*3.0/(self.spectrum.as_ref().len() as f32);
         return res;
     }
 }

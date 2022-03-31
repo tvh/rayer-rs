@@ -1,5 +1,6 @@
 #![feature(stdsimd)]
 #![feature(test)]
+#![feature(portable_simd)]
 extern crate arrayvec;
 extern crate core;
 extern crate clap;
@@ -16,7 +17,7 @@ extern crate pdqselect;
 #[cfg(test)]
 #[macro_use]
 extern crate quickcheck;
-extern crate packed_simd;
+extern crate core_simd;
 extern crate rand;
 extern crate rand_xorshift;
 extern crate rand_xoshiro;

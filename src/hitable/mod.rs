@@ -5,7 +5,7 @@ pub mod instance;
 
 use num_traits::Float;
 use euclid::*;
-use packed_simd::*;
+use core_simd::*;
 
 use ray::*;
 use texture::*;
@@ -62,19 +62,19 @@ impl AABB {
     }
 
     pub fn prepare_intersect(r: Ray) -> (f32x4, f32x4, TypedVector3D<bool, Inverted>) {
-        let origin_vec = f32x4::new(
+        let origin_vec = f32x4::from([
             r.origin.x,
             r.origin.y,
             r.origin.z,
             r.origin.z,
-        );
+        ]);
 
-        let inv_direction_vec = f32x4::new(
+        let inv_direction_vec = f32x4::from([
             r.inv_direction.x,
             r.inv_direction.y,
             r.inv_direction.z,
             r.inv_direction.z,
-        );
+        ]);
 
         return (origin_vec, inv_direction_vec, r.sign)
     }
@@ -84,47 +84,47 @@ impl AABB {
     #[inline(always)]
     pub fn intersects_2(&self, second: &Self, sign: TypedVector3D<bool, Inverted>, origin_vec: f32x4, inv_direction_vec: f32x4, t0: f32, t1: f32) -> (Option<f32>, Option<f32>) {
         let tmin_0 = {
-            let bounds_vec = f32x4::new(
+            let bounds_vec = f32x4::from([
                 self.bounds[sign.x as usize].x,
                 self.bounds[sign.y as usize].y,
                 self.bounds[sign.z as usize].z,
                 self.bounds[sign.z as usize].z,
-            );
+            ]);
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.max_element()
+            res_vec.reduce_max()
         };
 
         let tmax_0 = {
-            let bounds_vec = f32x4::new(
+            let bounds_vec = f32x4::from([
                 self.bounds[1-sign.x as usize].x,
                 self.bounds[1-sign.y as usize].y,
                 self.bounds[1-sign.z as usize].z,
                 self.bounds[1-sign.z as usize].z,
-            );
+            ]);
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.min_element()
+            res_vec.reduce_min()
         };
 
         let tmin_1 = {
-            let bounds_vec = f32x4::new(
+            let bounds_vec = f32x4::from([
                 second.bounds[sign.x as usize].x,
                 second.bounds[sign.y as usize].y,
                 second.bounds[sign.z as usize].z,
                 second.bounds[sign.z as usize].z,
-            );
+            ]);
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.max_element()
+            res_vec.reduce_max()
         };
 
         let tmax_1 = {
-            let bounds_vec = f32x4::new(
+            let bounds_vec = f32x4::from([
                 second.bounds[1-sign.x as usize].x,
                 second.bounds[1-sign.y as usize].y,
                 second.bounds[1-sign.z as usize].z,
                 second.bounds[1-sign.z as usize].z,
-            );
+            ]);
             let res_vec = (bounds_vec - origin_vec) * inv_direction_vec;
-            res_vec.min_element()
+            res_vec.reduce_min()
         };
 
         let res_0 = {
